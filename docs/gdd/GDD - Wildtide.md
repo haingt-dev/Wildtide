@@ -2,7 +2,7 @@
 up: "[[Project - Wildtide]]"
 created: [2026-02-01 01:02]
 aliases: [GDD]
-updated: 2026-02-09 18:57
+updated: 2026-02-11 00:40
 type: note
 status: in-progress
 tags: [gdd, project/gamedev]
@@ -50,6 +50,9 @@ Observe (3min) → Influence (3min) → Wave (1min) → Evolve (1min) — ~8 ph�
 | Quest System    | [[WT - Quest System]]       | 🟢     |
 | The Wave        | [[WT - The Wave]]           | 🟢     |
 | Art Direction   | [[WT - Art Direction]]      | 🟢     |
+| Hex Terrain     | [WT - Hexagonal Terrain](WT - Hexagonal Terrain.md) | 🟢     |
+| Biomes          | [WT - Biomes](WT - Biomes.md)                       | 🟢     |
+| Ancient Ruins   | [WT - Ancient Ruins](WT - Ancient Ruins.md)          | 🟢     |
 | Technical Stack | [[WT - Technical Stack]]    | 🟢     |
 
 ---

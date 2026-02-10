@@ -24,6 +24,29 @@ Low Poly Stylized aesthetic. 3 visual layers:
 ### 4. The Wave
 Periodic "unit test" for player governance. Monsters from 3 Rifts. Escalates per Era.
 
+## Terrain & Environment
+
+### Hex Grid Terrain
+- Flat-top hexagonal grid, ~250 hexes per map
+- Cube coordinates internally (q, r, s)
+- Custom `HexGrid` Resource (Godot GridMap doesn't support hex)
+
+### Biomes (5 types)
+Each hex belongs to one biome. Biomes apply gameplay modifiers:
+- **Plains** — Default, balanced. No special modifiers.
+- **Forest** — +Harmony push, slower construction, alignment-neutral.
+- **Rocky/Highland** — +Defense bonus, reduced resource yield.
+- **Swamp** — +Pollution push, clusters near Rifts, hazardous.
+- **Ruins** — Contains Ancient Ruins for exploration, scattered placement.
+
+Modifiers per biome: construction speed, resource yield (Gold/Mana), defense bonus, metric push, alignment affinity.
+
+### Ancient Ruins Exploration
+- 3 ruin types: Observatory (Tech Fragments + Wave preview), Energy Shrine (Rune Shards + Mana buff), Archive Vault (mixed + Sovereign Quest unlock)
+- Exhaustible resources — ruins deplete after extraction
+- Environmental lore delivery mechanism
+- Faction quests can target specific ruins
+
 ## Core Loop
 
 **Observe (3min)** → **Influence (3min)** → **Wave (1min)** → **Evolve (1min)**
@@ -57,3 +80,7 @@ Each submits 1 quest/cycle. Player approves/rejects during Influence phase.
 | 2 | 6-10 | base×1.8 | + Rift Stalkers |
 | 3 | 11-15 | base×3.0 | + Rift Titan |
 | Final | 16 | base×5.0 | All + Rift Core boss |
+
+## GDD Status
+- **11 sections** total (as of 2026-02-11)
+- All sections internally consistent and production-ready

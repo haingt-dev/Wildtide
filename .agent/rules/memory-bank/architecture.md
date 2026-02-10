@@ -46,7 +46,41 @@
 - "Summon the Tide" early trigger: 50% resource cost, 80% power, 60% rewards
 - History Scars: permanent visual + -20% construction speed on damaged tiles
 
-### 6. Save System
+### 6. Hex Grid System
+- **Hex type**: Flat-top hexagons
+- **Coordinates**: Cube coordinates internally (q, r, s), offset for display
+- **Map size**: ~200-300 hexes per map
+- **Implementation**: Custom `HexGrid` Resource class (Godot `GridMap` doesn't support hex natively)
+- **Rendering**: Each hex = 1 `Node3D` with `MeshInstance3D`. `MultiMeshInstance3D` optimization for large hex counts.
+- **Data**: Each hex stores biome type, building reference, terrain modifiers, exploration state
+
+### 7. Biome System
+- **5 biome types**: Plains, Forest, Rocky/Highland, Swamp, Ruins
+- Each hex stores its biome type in the `HexGrid` Resource
+- **Biome effects** (per-hex modifiers):
+  - Construction speed modifier
+  - Resource yield modifier (Gold / Mana)
+  - Defense bonus
+  - Metric push (e.g., Forest → +Harmony, Swamp → +Pollution)
+  - Alignment affinity (Science / Magic / Neutral)
+- **Procedural generation rules**:
+  - Swamp clusters near Rifts
+  - Ruins scattered (low density, semi-random)
+  - Forest forms clusters (Perlin noise or similar)
+  - Plains as default / filler biome
+  - Rocky/Highland at map edges or elevated areas
+
+### 8. Ancient Ruins
+- **3 ruin types**:
+  - **Observatory** → Tech Fragments + Wave preview intel
+  - **Energy Shrine** → Rune Shards + temporary Mana buff
+  - **Archive Vault** → Mixed resources + Sovereign Quest unlock
+- **Exploration states**: Undiscovered → Discovered → Being Explored → Depleted/Damaged
+- **Resources are exhaustible** — ruins deplete after extraction
+- **Faction interaction**: Factions may submit quests to exploit specific ruins
+- **Environmental lore delivery**: Ruins provide world-building context through exploration
+
+### 9. Save System
 - JSON-based, split files: `meta.json`, `world.json`, `metrics.json`, `factions.json`
 - Autosave at start of each Wave phase
 - No encryption for MVP

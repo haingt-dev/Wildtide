@@ -33,6 +33,14 @@
 - Policy data, Quest definitions, Metric interaction matrix → `.tres` files
 - Game mode presets (Normal/Hell/Zen) → alternative `.tres` weight files
 
+## Hex Grid & Terrain
+
+- **Custom `HexGrid` Resource** — Godot `GridMap` doesn't support hexagonal grids natively; requires custom implementation
+- **Coordinate system**: Cube coordinates (q, r, s) internally, offset coordinates for display/rendering
+- **Per-hex data**: Biome type, building reference, terrain modifiers, exploration state — all stored in the `HexGrid` Resource
+- **Rendering**: Each hex = 1 `Node3D` + `MeshInstance3D`; `MultiMeshInstance3D` for optimization at scale (~200-300 hexes)
+- **Biome data**: 5 types (Plains, Forest, Rocky/Highland, Swamp, Ruins) stored per-hex, affects gameplay modifiers
+
 ## Shader Budget (MVP: 4 max)
 
 1. Terrain grass-wind sway (vertex displacement)
