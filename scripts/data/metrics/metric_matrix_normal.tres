@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="InteractionMatrix" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/metrics/interaction_matrix.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+weights = [PackedFloat64Array(0, 0.3, 0, -0.5), PackedFloat64Array(0, 0, -0.3, -0.2), PackedFloat64Array(0, -0.2, 0, 0.3), PackedFloat64Array(-0.4, -0.1, 0.2, 0)]
