@@ -18,6 +18,7 @@ config/icon="res://icon.svg"
 
 EventBus="*res://scripts/core/event_bus.gd"
 GameManager="*res://scripts/core/game_manager.gd"
+MetricSystem="*res://scripts/metrics/metric_system.gd"
 
 [editor_plugins]
 
