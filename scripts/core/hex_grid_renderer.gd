@@ -27,6 +27,20 @@ func _setup_multi_mesh_instance() -> void:
 	_multi_mesh_instance = MultiMeshInstance3D.new()
 	var mat := ShaderMaterial.new()
 	mat.shader = HEX_TERRAIN_SHADER
+
+	# Set biome colors (shader uniform arrays can't have default values).
+	# PLAINS=0, FOREST=1, ROCKY=2, SWAMP=3, RUINS=4.
+	mat.set_shader_parameter(
+		"biome_colors",
+		[
+			Color(0.65, 0.78, 0.42, 1.0),  # Plains — yellow-green
+			Color(0.20, 0.55, 0.25, 1.0),  # Forest — dark green
+			Color(0.60, 0.55, 0.50, 1.0),  # Rocky  — gray-brown
+			Color(0.35, 0.45, 0.30, 1.0),  # Swamp  — murky green
+			Color(0.55, 0.50, 0.40, 1.0)  # Ruins  — sandy gray
+		]
+	)
+
 	_multi_mesh_instance.material_override = mat
 	add_child(_multi_mesh_instance)
 
