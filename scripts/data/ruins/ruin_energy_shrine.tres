@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RuinData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/ruin_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+ruin_type = 1
+display_name = &"Energy Shrine"
+description = "A glowing foundation channeling residual rift energy."
+exploration_duration = 2
+tech_fragments = 0
+rune_shards = 3
+rarity_weight = 0.4
+damage_yield_penalty = 0.5
