@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BuildingData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/building_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+building_id = &"homestead"
+building_type = 0
+display_name = "Homestead"
+description = "Basic housing that builds community spirit."
+construction_duration = 1
+metric_effects = { &"solidarity": 0.02, &"anxiety": -0.01 }
+alignment_push = 0.0
+biome_affinity = 0
+affinity_bonus = 0.2

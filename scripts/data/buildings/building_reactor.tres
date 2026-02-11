@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BuildingData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/building_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+building_id = &"reactor"
+building_type = 1
+display_name = "Reactor"
+description = "A compact reactor harnessing energy from mineral deposits."
+construction_duration = 3
+metric_effects = { &"pollution": 0.04, &"anxiety": 0.02 }
+alignment_push = 0.15
+biome_affinity = 2
+affinity_bonus = 0.2
