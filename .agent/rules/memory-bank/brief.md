@@ -8,7 +8,7 @@
 | Field | Value |
 |-------|-------|
 | **Genre** | Auto-City Builder / Indirect Management / Strategy |
-| **Engine** | Godot 4.4 (stable, pinned) |
+| **Engine** | Godot 4.6 (stable, pinned) |
 | **Language** | GDScript only |
 | **Platform** | PC — Linux Native (primary) |
 | **Target HW** | AMD integrated GPU (Steam Deck tier), 60fps |

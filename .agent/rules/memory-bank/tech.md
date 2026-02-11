@@ -4,7 +4,7 @@
 
 | Component | Choice | Notes |
 |-----------|--------|-------|
-| **Engine** | Godot 4.4 stable | Pinned via `.godot-version` at repo root |
+| **Engine** | Godot 4.6 stable | Pinned via `.godot-version` at repo root |
 | **Language** | GDScript only | Minimize toolchain; no .NET SDK dependency on Linux |
 | **Fallback** | GDExtension (C++) | Only for surgical optimization (e.g., 500+ NPC pathfinding) |
 | **Renderer** | Forward+ | Default Godot 4.x renderer |
@@ -64,11 +64,25 @@
 - **Visual Swap**: Shared mesh, swap Materials/Props based on Science/Magic alignment
 - **Mass Objects**: `MultiMeshInstance3D` for birds (Magic) / drones (Science), grass, particles
 
+## Testing
+
+| Component | Choice | Notes |
+|-----------|--------|-------|
+| **Framework** | GUT 9.x (Godot Unit Testing) | `addons/gut/` plugin |
+| **Config** | `.gutconfig.json` | Test dirs, prefix, log level |
+| **Unit tests** | `test/unit/` | `test_*.gd` files extending `GutTest` |
+| **Integration tests** | `test/integration/` | Cross-system tests |
+| **Test fixtures** | `test/fixtures/` | Mock resources, test data |
+| **CLI run** | `godot -d -s --path "$PWD" addons/gut/gut_cmdln.gd` | CI-compatible |
+
 ## Debug & Tooling
 
 - `MetricDebugPanel` — in-game overlay (debug builds only), real-time metric display
 - CSV metric snapshots per cycle — balance via data, not theory
 - `.godot-version` file pinning engine version
+- `gdtoolkit 4.5.0` — GDScript linter (`gdlint`) and formatter (`gdformat`), configured via `.gdtoolkit` at project root
+  - `pip install --user gdtoolkit` (Python 3.14, user-local install)
+  - Settings: 120-char line length, 60-line max function, 500-line max file
 
 ## Excluded from MVP
 
