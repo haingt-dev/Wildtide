@@ -47,3 +47,7 @@ secrets.*
 # Agent credentials
 .agent/credentials.*
 .agent/secrets.*
+
+# GUT test output
+.gut_editor_config.json
+.gut_editor_shortcuts.cfg
