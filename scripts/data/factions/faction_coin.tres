@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="FactionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/faction_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+faction_type = 2
+faction_id = &"coin"
+display_name = "The Coin"
+description = "Commerce faction driving trade and economy."
+alignment_bias = 0.0
+quest_pool = Array[StringName]([&"coin_market", &"coin_trade", &"coin_bank"])

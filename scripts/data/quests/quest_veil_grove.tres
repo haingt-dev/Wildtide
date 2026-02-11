@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+quest_id = &"veil_grove"
+faction_id = &"veil"
+display_name = "Cultivate Mana Grove"
+description = "Grow a living grove that channels Rift energy into harmony."
+duration = 3
+metric_effects = { &"harmony": 0.06, &"pollution": -0.02 }
+alignment_push = -0.12

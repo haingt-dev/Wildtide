@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+quest_id = &"coin_bank"
+faction_id = &"coin"
+display_name = "Build Reserve Vault"
+description = "Construct a secure vault to stabilize the city economy."
+duration = 3
+metric_effects = { &"anxiety": -0.02, &"solidarity": 0.02 }
+alignment_push = 0.0

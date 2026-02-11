@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+quest_id = &"wall_patrol"
+faction_id = &"wall"
+display_name = "Establish Patrol Routes"
+description = "Organize regular patrols to keep the streets safe."
+duration = 1
+metric_effects = { &"anxiety": -0.02, &"harmony": 0.02 }
+alignment_push = 0.0

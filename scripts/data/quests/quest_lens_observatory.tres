@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+quest_id = &"lens_observatory"
+faction_id = &"lens"
+display_name = "Restore Observatory"
+description = "Rebuild an Ancient observatory for celestial mapping."
+duration = 2
+metric_effects = { &"harmony": 0.03, &"anxiety": -0.01 }
+alignment_push = 0.08

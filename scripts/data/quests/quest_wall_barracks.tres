@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+quest_id = &"wall_barracks"
+faction_id = &"wall"
+display_name = "Construct Barracks"
+description = "Train militia and reinforce perimeter defenses."
+duration = 1
+metric_effects = { &"anxiety": -0.03, &"solidarity": 0.02 }
+alignment_push = 0.0

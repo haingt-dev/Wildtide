@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+quest_id = &"wall_fortify"
+faction_id = &"wall"
+display_name = "Fortify Outer Wall"
+description = "Reinforce the outer perimeter with stone and steel."
+duration = 2
+metric_effects = { &"anxiety": -0.04, &"pollution": 0.01 }
+alignment_push = 0.0
