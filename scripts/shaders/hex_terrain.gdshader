@@ -5,8 +5,15 @@ shader_type spatial;
 // Colors set from GDScript (uniform arrays can't have default values).
 uniform vec4 biome_colors[5] : source_color;
 
+varying float biome_value;
+
+void vertex() {
+	// Read INSTANCE_CUSTOM in vertex shader and pass to fragment via varying.
+	biome_value = INSTANCE_CUSTOM.r;
+}
+
 void fragment() {
-	int biome_index = int(INSTANCE_CUSTOM.r * 4.0 + 0.5);
+	int biome_index = int(biome_value * 4.0 + 0.5);
 	biome_index = clamp(biome_index, 0, 4);
 	ALBEDO = biome_colors[biome_index].rgb;
 }
