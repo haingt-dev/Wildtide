@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BiomeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/biome_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+biome_type = 2
+display_name = &"Rocky"
+construction_speed = 0.8
+gold_yield = 1.5
+mana_yield = 0.5
+defense_bonus = 0.2
+metric_push = &"harmony"
+metric_push_value = -0.1
+alignment_affinity = 0.3
