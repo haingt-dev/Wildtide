@@ -17,6 +17,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 EventBus="*res://scripts/core/event_bus.gd"
+GameManager="*res://scripts/core/game_manager.gd"
 
 [editor_plugins]
 
