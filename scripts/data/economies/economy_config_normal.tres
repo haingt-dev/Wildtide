@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EconomyConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/economy_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+starting_gold = 100
+starting_mana = 50
+starting_gold_capacity = 100
+starting_mana_capacity = 100
+capacity_per_storage = 20
+base_gold_yield = 1.0
+base_mana_yield = 1.0
+transit_modifier = 0.5
+scar_modifier = 0.8
+migration_cost_fraction = 0.7
+summon_tide_cost_fraction = 0.5
+required_fragments = 15

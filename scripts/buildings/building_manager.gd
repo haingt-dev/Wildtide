@@ -8,6 +8,7 @@ const SCAR_SPEED_PENALTY: float = 0.2  ## -20% speed on scarred hexes
 var hex_grid: HexGrid
 var building_registry: BuildingRegistry
 var biome_registry: BiomeRegistry
+var economy_manager: EconomyManager  ## Optional — if set, building costs are enforced.
 
 ## All placed buildings (both under construction and completed).
 ## Key: Vector3i (coord), Value: ActiveConstruction.
@@ -29,6 +30,8 @@ func place_building(coord: Vector3i, building_id: StringName) -> bool:
 		return false
 	var bdata: BuildingData = building_registry.get_data(building_id)
 	if not bdata:
+		return false
+	if economy_manager and not economy_manager.spend(bdata.gold_cost, bdata.mana_cost):
 		return false
 	cell.building_id = building_id
 	var active := ActiveConstruction.new(coord, bdata)

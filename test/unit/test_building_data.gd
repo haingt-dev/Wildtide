@@ -16,6 +16,9 @@ func test_building_data_defaults() -> void:
 	assert_eq(data.building_id, &"")
 	assert_eq(data.building_type, BuildingType.Type.RESIDENTIAL)
 	assert_eq(data.construction_duration, 2)
+	assert_eq(data.gold_cost, 0)
+	assert_eq(data.mana_cost, 0)
+	assert_eq(data.adjacency_targets.size(), 0)
 
 
 func test_building_data_metric_effects() -> void:
@@ -88,3 +91,51 @@ func test_biome_affinity_values() -> void:
 	assert_eq(reactor.biome_affinity, BiomeType.Type.ROCKY)
 	var shrine: BuildingData = registry.get_data(&"shrine")
 	assert_eq(shrine.biome_affinity, BiomeType.Type.FOREST)
+
+
+# --- Cost fields ---
+
+
+func test_homestead_costs() -> void:
+	var data: BuildingData = registry.get_data(&"homestead")
+	assert_eq(data.gold_cost, 5)
+	assert_eq(data.mana_cost, 2)
+
+
+func test_reactor_costs() -> void:
+	var data: BuildingData = registry.get_data(&"reactor")
+	assert_eq(data.gold_cost, 12)
+	assert_eq(data.mana_cost, 5)
+
+
+func test_shrine_costs() -> void:
+	var data: BuildingData = registry.get_data(&"shrine")
+	assert_eq(data.gold_cost, 5)
+	assert_eq(data.mana_cost, 12)
+
+
+func test_workshop_costs() -> void:
+	var data: BuildingData = registry.get_data(&"workshop")
+	assert_eq(data.gold_cost, 15)
+	assert_eq(data.mana_cost, 8)
+
+
+# --- Adjacency targets ---
+
+
+func test_reactor_adjacency_workshop() -> void:
+	var data: BuildingData = registry.get_data(&"reactor")
+	assert_true(data.adjacency_targets.has(&"workshop"))
+	assert_almost_eq(data.adjacency_targets[&"workshop"] as float, 0.2, 0.001)
+
+
+func test_market_adjacency_homestead() -> void:
+	var data: BuildingData = registry.get_data(&"market")
+	assert_true(data.adjacency_targets.has(&"homestead"))
+	assert_almost_eq(data.adjacency_targets[&"homestead"] as float, 0.2, 0.001)
+
+
+func test_watchtower_adjacency_self() -> void:
+	var data: BuildingData = registry.get_data(&"watchtower")
+	assert_true(data.adjacency_targets.has(&"watchtower"))
+	assert_almost_eq(data.adjacency_targets[&"watchtower"] as float, 0.15, 0.001)

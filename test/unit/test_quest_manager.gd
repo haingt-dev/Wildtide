@@ -189,3 +189,51 @@ func test_no_action_on_wave_phase() -> void:
 func test_reject_nonexistent_returns_false() -> void:
 	var success: bool = manager.reject_quest(&"nonexistent")
 	assert_false(success)
+
+
+# --- Faction Morale ---
+
+
+func test_morale_initialized_at_default() -> void:
+	for faction: FactionData in manager.faction_registry.get_all():
+		assert_eq(manager.get_faction_morale(faction.faction_id), 50)
+
+
+func test_approve_increases_morale() -> void:
+	manager._on_phase_changed(CycleTimer.Phase.INFLUENCE, &"influence")
+	var proposals := manager.get_pending_proposals()
+	var target: QuestData = proposals[0]
+	manager.approve_quest(target.quest_id)
+	assert_eq(manager.get_faction_morale(target.faction_id), 55)
+
+
+func test_reject_decreases_morale() -> void:
+	manager._on_phase_changed(CycleTimer.Phase.INFLUENCE, &"influence")
+	var proposals := manager.get_pending_proposals()
+	var target: QuestData = proposals[0]
+	manager.reject_quest(target.quest_id)
+	assert_eq(manager.get_faction_morale(target.faction_id), 47)
+
+
+func test_morale_clamped_at_max() -> void:
+	manager._faction_morale[&"lens"] = 98
+	manager.push_faction_morale(&"lens", 10)
+	assert_eq(manager.get_faction_morale(&"lens"), 100)
+
+
+func test_morale_clamped_at_min() -> void:
+	manager._faction_morale[&"lens"] = 2
+	manager.push_faction_morale(&"lens", -10)
+	assert_eq(manager.get_faction_morale(&"lens"), 0)
+
+
+func test_morale_change_emits_signal() -> void:
+	var received := []
+	EventBus.faction_morale_changed.connect(
+		func(f: StringName, nv: int, ov: int) -> void: received.append([f, nv, ov])
+	)
+	manager.push_faction_morale(&"lens", 10)
+	assert_eq(received.size(), 1)
+	assert_eq(received[0][0], &"lens")
+	assert_eq(received[0][1], 60)
+	assert_eq(received[0][2], 50)

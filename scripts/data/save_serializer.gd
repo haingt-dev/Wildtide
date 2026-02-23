@@ -33,6 +33,8 @@ static func serialize_meta(game_mgr: Node) -> Dictionary:
 		"cycle_number": game_mgr.cycle_number,
 		"current_phase": int(game_mgr.current_phase),
 		"game_speed": game_mgr.game_speed,
+		"scenario_id":
+		game_mgr.get("scenario_id") if game_mgr.get("scenario_id") else "the_wildtide",
 	}
 
 
@@ -54,6 +56,10 @@ static func serialize_world(
 					"scar_state": cell.scar_state,
 					"exploration_state": cell.exploration_state,
 					"alignment_local": cell.alignment_local,
+					"fog_state": cell.fog_state,
+					"region": cell.region,
+					"rift_density": cell.rift_density,
+					"pollution_level": cell.pollution_level,
 				}
 			)
 		)
@@ -139,11 +145,56 @@ static func serialize_factions(quest_mgr: QuestManager) -> Dictionary:
 	for faction_id: StringName in quest_mgr._last_proposed:
 		last[String(faction_id)] = String(quest_mgr._last_proposed[faction_id])
 
+	var morale: Dictionary = {}
+	for faction_id: StringName in quest_mgr._faction_morale:
+		morale[String(faction_id)] = quest_mgr._faction_morale[faction_id]
+
 	return {
 		"pending_proposals": pending,
 		"active_quests": active,
 		"last_proposed": last,
+		"faction_morale": morale,
 	}
+
+
+static func serialize_economy(economy_mgr: EconomyManager) -> Dictionary:
+	return {
+		"gold": economy_mgr.get_gold(),
+		"mana": economy_mgr.get_mana(),
+		"gold_capacity": economy_mgr.get_gold_capacity(),
+		"mana_capacity": economy_mgr.get_mana_capacity(),
+	}
+
+
+static func serialize_stability(tracker: StabilityTracker) -> Dictionary:
+	return {
+		"stability": tracker.get_stability(),
+		"depletion_cycles": tracker.get_depletion_cycles(),
+	}
+
+
+static func serialize_movement(move_mgr: MovementManager) -> Dictionary:
+	return {
+		"city_center": vec3i_to_array(move_mgr.city_center),
+		"is_in_transit": move_mgr.is_in_transit,
+		"transit_cycles_remaining": move_mgr.transit_cycles_remaining,
+	}
+
+
+static func serialize_edicts(edict_mgr: EdictManager) -> Dictionary:
+	var edicts: Array = []
+	for eid: StringName in edict_mgr._active_edicts:
+		var entry: Dictionary = edict_mgr._active_edicts[eid]
+		(
+			edicts
+			. append(
+				{
+					"edict_id": String(eid),
+					"remaining": entry["remaining"],
+				}
+			)
+		)
+	return {"active_edicts": edicts}
 
 
 # --- Deserialize ---
@@ -182,6 +233,10 @@ static func deserialize_world(
 		cell.scar_state = float(cell_dict.get("scar_state", 0.0))
 		cell.exploration_state = int(cell_dict.get("exploration_state", 0))
 		cell.alignment_local = float(cell_dict.get("alignment_local", 0.0))
+		cell.fog_state = int(cell_dict.get("fog_state", FogState.ACTIVE))
+		cell.region = int(cell_dict.get("region", RegionType.Type.STARTING))
+		cell.rift_density = float(cell_dict.get("rift_density", 0.0))
+		cell.pollution_level = float(cell_dict.get("pollution_level", 0.0))
 		grid._cell_array.append(cell)
 	grid.rebuild_lookup()
 
@@ -269,4 +324,49 @@ static func deserialize_factions(data: Dictionary, quest_mgr: QuestManager) -> b
 		var faction_id: StringName = StringName(faction_id_str)
 		quest_mgr._last_proposed[faction_id] = StringName(last_data[faction_id_str])
 
+	# Faction morale (backward compat: defaults to initialized morale if absent)
+	var morale_data: Dictionary = data.get("faction_morale", {})
+	for faction_id_str: String in morale_data:
+		quest_mgr._faction_morale[StringName(faction_id_str)] = int(morale_data[faction_id_str])
+
+	return true
+
+
+static func deserialize_economy(data: Dictionary, economy_mgr: EconomyManager) -> bool:
+	if not data.has("gold"):
+		return false
+	economy_mgr._gold = int(data["gold"])
+	economy_mgr._mana = int(data.get("mana", 0))
+	economy_mgr._gold_capacity = int(data.get("gold_capacity", 100))
+	economy_mgr._mana_capacity = int(data.get("mana_capacity", 100))
+	return true
+
+
+static func deserialize_stability(data: Dictionary, tracker: StabilityTracker) -> bool:
+	if not data.has("stability"):
+		return false
+	tracker.set_stability(int(data["stability"]))
+	tracker.set_depletion_cycles(int(data.get("depletion_cycles", 0)))
+	return true
+
+
+static func deserialize_movement(data: Dictionary, move_mgr: MovementManager) -> bool:
+	move_mgr.city_center = array_to_vec3i(data.get("city_center", [0, 0, 0]))
+	move_mgr.is_in_transit = bool(data.get("is_in_transit", false))
+	move_mgr.transit_cycles_remaining = int(data.get("transit_cycles_remaining", 0))
+	if move_mgr.is_in_transit and move_mgr.economy_manager:
+		move_mgr.economy_manager.set_transit(true)
+	return true
+
+
+static func deserialize_edicts(data: Dictionary, edict_mgr: EdictManager) -> bool:
+	var edicts_data: Array = data.get("active_edicts", [])
+	for entry: Dictionary in edicts_data:
+		var eid: StringName = StringName(entry["edict_id"])
+		var edata: EdictData = edict_mgr.edict_registry.get_edict(eid)
+		if edata:
+			edict_mgr._active_edicts[eid] = {
+				"data": edata,
+				"remaining": int(entry["remaining"]),
+			}
 	return true

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EdictData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/edict_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+edict_id = &"magic_priority"
+display_name = "Magic Priority"
+description = "Focus research on mystical arts, accelerating the Magic path."
+category = 2
+metric_effects = {}
+economy_effects = {}
+alignment_push = -0.1
+discovery_bonus = 0.1
+duration = -1
+is_free_action = false
+faction_reactions = { &"veil": 5, &"lens": -3 }

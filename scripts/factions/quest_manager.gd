@@ -3,6 +3,12 @@ extends Node
 ## Manages faction quest proposal, approval, and execution lifecycle.
 ## Add as a child node in the main game scene (NOT an autoload).
 
+const DEFAULT_MORALE: int = 50
+const MIN_MORALE: int = 0
+const MAX_MORALE: int = 100
+const MORALE_ON_APPROVE: int = 5
+const MORALE_ON_REJECT: int = -3
+
 var faction_registry: FactionRegistry
 var quest_registry: QuestRegistry
 
@@ -18,6 +24,9 @@ var _active_quests: Dictionary = {}
 ## Key: StringName (faction_id), Value: StringName (quest_id)
 var _last_proposed: Dictionary = {}
 
+## Runtime morale per faction (0-100). Key: StringName (faction_id), Value: int.
+var _faction_morale: Dictionary = {}
+
 var _rng: RandomNumberGenerator
 
 
@@ -29,6 +38,7 @@ func _init() -> void:
 func _ready() -> void:
 	faction_registry = FactionRegistry.new()
 	quest_registry = QuestRegistry.new()
+	_initialize_morale()
 	EventBus.phase_changed.connect(_on_phase_changed)
 
 
@@ -40,6 +50,7 @@ func approve_quest(quest_id: StringName) -> bool:
 	_pending_proposals.erase(quest_id)
 	var active := ActiveQuest.new(quest_data)
 	_active_quests[quest_id] = active
+	push_faction_morale(quest_data.faction_id, MORALE_ON_APPROVE)
 	EventBus.quest_approved.emit(quest_data.faction_id, quest_id)
 	return true
 
@@ -50,6 +61,7 @@ func reject_quest(quest_id: StringName) -> bool:
 	if not quest_data:
 		return false
 	_pending_proposals.erase(quest_id)
+	push_faction_morale(quest_data.faction_id, MORALE_ON_REJECT)
 	EventBus.quest_rejected.emit(quest_data.faction_id, quest_id)
 	return true
 
@@ -70,6 +82,20 @@ func get_active_quests() -> Array[ActiveQuest]:
 	return result
 
 
+## Get faction morale (0-100).
+func get_faction_morale(faction_id: StringName) -> int:
+	return _faction_morale.get(faction_id, DEFAULT_MORALE) as int
+
+
+## Push morale delta for a faction, clamped to [0, 100].
+func push_faction_morale(faction_id: StringName, delta: int) -> void:
+	var old_value: int = get_faction_morale(faction_id)
+	var new_value: int = clampi(old_value + delta, MIN_MORALE, MAX_MORALE)
+	_faction_morale[faction_id] = new_value
+	if new_value != old_value:
+		EventBus.faction_morale_changed.emit(faction_id, new_value, old_value)
+
+
 ## Get count of active quests for a specific faction.
 func get_active_count_for_faction(faction_id: StringName) -> int:
 	var count: int = 0
@@ -77,6 +103,11 @@ func get_active_count_for_faction(faction_id: StringName) -> int:
 		if active.faction_id == faction_id:
 			count += 1
 	return count
+
+
+func _initialize_morale() -> void:
+	for faction_data: FactionData in faction_registry.get_all():
+		_faction_morale[faction_data.faction_id] = DEFAULT_MORALE
 
 
 func _on_phase_changed(new_phase: int, _phase_name: StringName) -> void:

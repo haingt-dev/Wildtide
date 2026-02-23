@@ -12,6 +12,10 @@ var cycle_number: int = 0
 var game_speed: int = 1
 var is_paused: bool = false
 var is_running: bool = false
+var scenario_id: StringName = &"the_wildtide"
+
+## Cycle numbers where each era begins. Index 0 = Era 1, etc.
+var era_cycle_thresholds: Array[int] = [1, 6, 11, 16]
 
 var _phase_timer: Timer
 
@@ -80,6 +84,15 @@ func get_phase_progress() -> float:
 		return 1.0
 	var elapsed: float = total - _phase_timer.time_left
 	return clampf(elapsed / total, 0.0, 1.0)
+
+
+## Get the current era (1-based) derived from cycle_number and thresholds.
+func get_current_era() -> int:
+	var era: int = 1
+	for i: int in range(era_cycle_thresholds.size()):
+		if cycle_number >= era_cycle_thresholds[i]:
+			era = i + 1
+	return era
 
 
 ## Seconds remaining in current phase.

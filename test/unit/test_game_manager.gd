@@ -235,3 +235,44 @@ func test_phase_progress_not_running() -> void:
 
 func test_phase_time_remaining_not_running() -> void:
 	assert_almost_eq(gm.get_phase_time_remaining(), 0.0, 0.001)
+
+
+# --- Era tracking ---
+
+
+func test_default_era_thresholds() -> void:
+	assert_eq(gm.era_cycle_thresholds, [1, 6, 11, 16])
+
+
+func test_era_1_at_cycle_1() -> void:
+	gm.cycle_number = 1
+	assert_eq(gm.get_current_era(), 1)
+
+
+func test_era_1_at_cycle_5() -> void:
+	gm.cycle_number = 5
+	assert_eq(gm.get_current_era(), 1)
+
+
+func test_era_2_at_cycle_6() -> void:
+	gm.cycle_number = 6
+	assert_eq(gm.get_current_era(), 2)
+
+
+func test_era_3_at_cycle_11() -> void:
+	gm.cycle_number = 11
+	assert_eq(gm.get_current_era(), 3)
+
+
+func test_era_4_at_cycle_16() -> void:
+	gm.cycle_number = 16
+	assert_eq(gm.get_current_era(), 4)
+
+
+func test_era_0_before_game_starts() -> void:
+	gm.cycle_number = 0
+	assert_eq(gm.get_current_era(), 1, "Era defaults to 1 even at cycle 0")
+
+
+func test_scenario_id_default() -> void:
+	assert_eq(gm.scenario_id, &"the_wildtide")

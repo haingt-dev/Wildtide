@@ -38,7 +38,8 @@ func _run_wave(cycle: int) -> void:
 	if not hex_grid or not wave_config or rift_positions.is_empty():
 		return
 
-	_last_wave_power = wave_config.get_wave_power(cycle)
+	var region: RegionType.Type = _get_active_region()
+	_last_wave_power = wave_config.get_wave_power(cycle, region)
 	_last_total_damage = 0.0
 	var rift_count: int = rift_positions.size()
 	var rift_power: float = _last_wave_power / float(rift_count)
@@ -70,6 +71,15 @@ func _calc_damage(rift_power: float, dist: int, radius: int, biome: BiomeType.Ty
 	var raw: float = rift_power * wave_config.damage_per_power * distance_factor
 	var defense: float = _get_defense(biome)
 	return maxf(raw * (1.0 - defense), 0.0)
+
+
+func _get_active_region() -> RegionType.Type:
+	if not hex_grid or rift_positions.is_empty():
+		return RegionType.Type.MID
+	var cell: HexCell = hex_grid.get_cell(rift_positions[0])
+	if cell:
+		return cell.region as RegionType.Type
+	return RegionType.Type.MID
 
 
 func _get_defense(biome: BiomeType.Type) -> float:

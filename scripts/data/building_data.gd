@@ -8,6 +8,10 @@ extends Resource
 @export var display_name: String = ""
 @export var description: String = ""
 
+@export_group("Cost")
+@export var gold_cost: int = 0  ## Gold required to start construction
+@export var mana_cost: int = 0  ## Mana required to start construction
+
 @export_group("Construction")
 @export_range(1, 8) var construction_duration: int = 2  ## Cycles to complete
 
@@ -24,3 +28,8 @@ extends Resource
 ## Preferred biome type. Construction on this biome gets speed bonus.
 @export var biome_affinity: BiomeType.Type = BiomeType.Type.PLAINS
 @export var affinity_bonus: float = 0.2  ## Speed multiplier bonus on preferred biome
+
+@export_group("Adjacency")
+## Building IDs that provide adjacency bonus when neighboring this building.
+## Key: StringName (building_id), Value: float (bonus amount).
+@export var adjacency_targets: Dictionary = {}

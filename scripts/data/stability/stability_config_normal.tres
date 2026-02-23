@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="StabilityConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/stability_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+starting_stability = 100
+loss_multiplier = 1.0
+gain_multiplier = 1.0
+wave_damage_threshold = 0.5
+wave_damage_loss_min = -10
+wave_damage_loss_max = -30
+low_morale_threshold = 25
+low_morale_loss_per_cycle = -5
+resource_depletion_loss = -10
+failed_artifact_loss = -20
+wave_defense_threshold = 0.2
+wave_defense_gain = 5
+solidarity_threshold = 0.7
+solidarity_gain_per_cycle = 2
+high_morale_threshold = 75
+high_morale_gain_per_cycle = 1
+festival_gain_per_cycle = 3
+warning_yellow = 50
+warning_red = 25
+warning_final = 10
+game_over_enabled = true
+stability_floor = 0

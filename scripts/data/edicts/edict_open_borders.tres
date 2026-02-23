@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EdictData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/edict_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+edict_id = &"open_borders"
+display_name = "Open Borders"
+description = "Welcome outsiders to strengthen solidarity, weakening defenses."
+category = 1
+metric_effects = { &"solidarity": 0.15, &"anxiety": -0.1 }
+economy_effects = { &"defense": -0.15 }
+alignment_push = 0.0
+discovery_bonus = 0.0
+duration = -1
+is_free_action = false
+faction_reactions = { &"coin": 5, &"wall": -3 }

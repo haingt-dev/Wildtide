@@ -80,3 +80,37 @@ func test_custom_base_power() -> void:
 	config.base_power = 20.0
 	assert_almost_eq(config.get_wave_power(1), 20.0, 0.001)
 	assert_almost_eq(config.get_wave_power(6), 36.0, 0.001)
+
+
+# --- Region modifier ---
+
+
+func test_wave_power_region_starting() -> void:
+	# Era 1 × Starting (0.8): 10 × 1.0 × 0.8 = 8.0
+	assert_almost_eq(config.get_wave_power(1, RegionType.Type.STARTING), 8.0, 0.001)
+
+
+func test_wave_power_region_late() -> void:
+	# Era 1 × Late (1.5): 10 × 1.0 × 1.5 = 15.0
+	assert_almost_eq(config.get_wave_power(1, RegionType.Type.LATE), 15.0, 0.001)
+
+
+func test_wave_power_region_rift_core() -> void:
+	# Era 3 × Rift Core (2.0): 10 × 3.0 × 2.0 = 60.0
+	assert_almost_eq(config.get_wave_power(11, RegionType.Type.RIFT_CORE), 60.0, 0.001)
+
+
+func test_enemy_count_with_region() -> void:
+	# Era 1 × Starting (0.8): 10 × 1.0 × 0.8 = 8
+	assert_eq(config.get_enemy_count(1, RegionType.Type.STARTING), 8)
+
+
+# --- Custom era boundaries ---
+
+
+func test_custom_era_boundaries() -> void:
+	config.era_boundaries = [1, 4, 8, 12]
+	assert_eq(config.get_era(3), 0)
+	assert_eq(config.get_era(4), 1)
+	assert_eq(config.get_era(8), 2)
+	assert_eq(config.get_era(12), 3)

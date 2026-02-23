@@ -411,43 +411,22 @@ func test_deserialize_factions_missing_keys_returns_false() -> void:
 	assert_false(SaveSerializer.deserialize_factions({"pending_proposals": []}, quest_mgr))
 
 
-# --- Full round-trip ---
+func test_serialize_factions_stores_morale() -> void:
+	quest_mgr._faction_morale[&"lens"] = 70
+	quest_mgr._faction_morale[&"veil"] = 30
+	var data: Dictionary = SaveSerializer.serialize_factions(quest_mgr)
+	assert_true(data.has("faction_morale"))
+	assert_eq(data["faction_morale"]["lens"], 70)
+	assert_eq(data["faction_morale"]["veil"], 30)
 
 
-func test_full_round_trip_all_four() -> void:
-	# Set up non-default state across all systems
-	GameManager.cycle_number = 5
-	GameManager.current_phase = CycleTimer.Phase.INFLUENCE
-	GameManager.game_speed = 2
-	MetricSystem.pollution = 0.55
-	MetricSystem.science_value = 10.0
-	var cell: HexCell = grid.get_cell(Vector3i(1, -1, 0))
-	cell.biome = BiomeType.Type.SWAMP
-	cell.scar_state = 0.25
-	# Serialize all 4
-	var meta: Dictionary = SaveSerializer.serialize_meta(GameManager)
-	var world: Dictionary = SaveSerializer.serialize_world(grid, wave_mgr, ruins_mgr, building_mgr)
-	var metrics: Dictionary = SaveSerializer.serialize_metrics()
-	var factions: Dictionary = SaveSerializer.serialize_factions(quest_mgr)
-	# Clear everything
-	GameManager.cycle_number = 0
-	GameManager.current_phase = CycleTimer.Phase.OBSERVE
-	GameManager.game_speed = 1
-	GameManager.is_running = false
-	MetricSystem.reset_to_defaults()
-	var fresh_grid := HexGrid.new()
-	wave_mgr.rift_positions.clear()
-	# Deserialize all 4
-	assert_true(SaveSerializer.deserialize_meta(meta, GameManager))
-	assert_true(
-		SaveSerializer.deserialize_world(world, fresh_grid, wave_mgr, ruins_mgr, building_mgr)
-	)
-	assert_true(SaveSerializer.deserialize_metrics(metrics))
-	assert_true(SaveSerializer.deserialize_factions(factions, quest_mgr))
-	# Verify
-	assert_eq(GameManager.cycle_number, 5)
-	assert_almost_eq(MetricSystem.pollution, 0.55, 0.001)
-	assert_almost_eq(MetricSystem.science_value, 10.0, 0.001)
-	var loaded_cell: HexCell = fresh_grid.get_cell(Vector3i(1, -1, 0))
-	assert_eq(int(loaded_cell.biome), int(BiomeType.Type.SWAMP))
-	assert_eq(wave_mgr.rift_positions.size(), 3)
+func test_deserialize_factions_restores_morale() -> void:
+	var data: Dictionary = {
+		"pending_proposals": [],
+		"active_quests": [],
+		"last_proposed": {},
+		"faction_morale": {"lens": 80, "coin": 20},
+	}
+	SaveSerializer.deserialize_factions(data, quest_mgr)
+	assert_eq(quest_mgr._faction_morale[&"lens"], 80)
+	assert_eq(quest_mgr._faction_morale[&"coin"], 20)

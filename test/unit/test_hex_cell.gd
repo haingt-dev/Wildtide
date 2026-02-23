@@ -65,3 +65,23 @@ func test_biome_assignment() -> void:
 	var cell := HexCell.new()
 	cell.biome = BiomeType.Type.FOREST
 	assert_eq(cell.biome, BiomeType.Type.FOREST)
+
+
+func test_default_fog_state_is_active() -> void:
+	var cell := HexCell.new()
+	assert_eq(cell.fog_state, FogState.ACTIVE)
+
+
+func test_default_region_is_starting() -> void:
+	var cell := HexCell.new()
+	assert_eq(cell.region, RegionType.Type.STARTING)
+
+
+func test_default_rift_density() -> void:
+	var cell := HexCell.new()
+	assert_eq(cell.rift_density, 0.0)
+
+
+func test_default_pollution_level() -> void:
+	var cell := HexCell.new()
+	assert_eq(cell.pollution_level, 0.0)

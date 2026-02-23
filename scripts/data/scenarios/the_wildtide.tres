@@ -1,0 +1,62 @@
+[gd_resource type="Resource" script_class="ScenarioData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/scenario_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/map_preset.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/faction_config.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/data/win_condition_data.gd" id="4"]
+
+[sub_resource type="Resource" id="map_preset"]
+script = ExtResource("2")
+seed_strategy = 1
+fixed_seed = 0
+hex_count = 1750
+region_count = 4
+region_layout = 0
+starting_region_index = 0
+rift_count = 3
+rift_placement = 0
+biome_distribution = { &"plains": 0.35, &"forest": 0.25, &"rocky": 0.2, &"swamp": 0.15, &"ruins": 0.05 }
+ruin_placements = []
+
+[sub_resource type="Resource" id="faction_config"]
+script = ExtResource("3")
+available_factions = Array[StringName]([&"lens", &"veil", &"coin", &"wall"])
+starting_morale = { &"lens": 50, &"veil": 50, &"coin": 50, &"wall": 50 }
+faction_quest_pools = {}
+alignment_start = 0.0
+
+[sub_resource type="Resource" id="science_win"]
+script = ExtResource("4")
+type = 0
+required_alignment = 0.8
+required_fragments = 15
+required_era = 3
+required_cycles = 0
+requires_rift_core = true
+artifact_construction_cycles = 3
+custom_description = "Build the Wormhole Stabilizer to seal the Rifts through science."
+
+[sub_resource type="Resource" id="magic_win"]
+script = ExtResource("4")
+type = 1
+required_alignment = 0.8
+required_fragments = 15
+required_era = 3
+required_cycles = 0
+requires_rift_core = true
+artifact_construction_cycles = 3
+custom_description = "Perform The Accord ritual to tame the Rifts through magic."
+
+[resource]
+script = ExtResource("1")
+scenario_id = &"the_wildtide"
+display_name = "The Wildtide"
+description = "Rebuild civilization after the Wormhole Incident. Guide your city through Science or Magic to seal the Rifts."
+map_config = SubResource("map_preset")
+faction_config = SubResource("faction_config")
+win_conditions = Array[Resource]([SubResource("science_win"), SubResource("magic_win")])
+starting_metrics = { &"pollution": 0.1, &"anxiety": 0.3, &"solidarity": 0.2, &"harmony": 0.3 }
+era_cycle_thresholds = Array[int]([1, 6, 11, 16])
+wave_config_overrides = {}
+starting_gold = 100
+starting_mana = 50

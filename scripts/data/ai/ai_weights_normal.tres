@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="UtilityAIConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/utility_ai_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+need_weight = 1.0
+affinity_weight = 0.5
+adjacency_weight = 0.8
+faction_weight = 0.6
+penalty_weight = 0.7
+pollution_critical = 0.7
+anxiety_critical = 0.7
+harmony_critical_low = 0.3
+solidarity_critical_low = 0.3
+defense_critical_low = 0.3
+pollution_low_threshold = 0.3
+pollution_high_threshold = 0.7
+pollution_mid_penalty = -0.15
+pollution_max_penalty = -0.3
+era_placement_rates = [1, 2, 3, 3]
+science_dominant_threshold = 0.3
+magic_dominant_threshold = -0.3
+dominant_faction_bonus = 0.2
+max_candidates_per_eval = 300
+distance_falloff_radius = 5

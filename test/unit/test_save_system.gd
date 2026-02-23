@@ -84,10 +84,10 @@ func test_save_creates_directory() -> void:
 	assert_true(DirAccess.dir_exists_absolute(slot_path))
 
 
-func test_save_creates_four_json_files() -> void:
+func test_save_creates_core_json_files() -> void:
 	save_sys.save_game(TEST_SLOT)
 	var slot_path: String = SaveSystem.SAVE_DIR + TEST_SLOT + "/"
-	for file_name: String in SaveSystem.FILE_NAMES:
+	for file_name: String in SaveSystem.CORE_FILE_NAMES:
 		assert_true(FileAccess.file_exists(slot_path + file_name), file_name + " should exist")
 
 

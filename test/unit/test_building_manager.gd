@@ -224,3 +224,37 @@ func test_no_action_on_non_evolve_phase() -> void:
 	manager._on_phase_changed(CycleTimer.Phase.WAVE, &"wave")
 	var construction: ActiveConstruction = manager.get_construction(Vector3i(1, -1, 0))
 	assert_almost_eq(construction.progress, 0.0, 0.001)
+
+
+# --- Economy cost integration ---
+
+
+func test_place_with_economy_spends_resources() -> void:
+	var econ := EconomyManager.new()
+	econ.economy_config = EconomyConfig.new()
+	add_child(econ)
+	manager.economy_manager = econ
+	# Homestead costs 5 gold, 2 mana
+	manager.place_building(Vector3i(1, -1, 0), &"homestead")
+	assert_eq(econ.get_gold(), 95)
+	assert_eq(econ.get_mana(), 48)
+	econ.queue_free()
+
+
+func test_place_without_economy_no_cost_check() -> void:
+	# Default: economy_manager is null — backward compatible
+	var success: bool = manager.place_building(Vector3i(1, -1, 0), &"homestead")
+	assert_true(success)
+
+
+func test_place_fails_when_cannot_afford() -> void:
+	var econ := EconomyManager.new()
+	var cfg := EconomyConfig.new()
+	cfg.starting_gold = 1
+	cfg.starting_mana = 0
+	econ.economy_config = cfg
+	add_child(econ)
+	manager.economy_manager = econ
+	# Homestead costs 5 gold, 2 mana — too expensive
+	assert_false(manager.place_building(Vector3i(1, -1, 0), &"homestead"))
+	econ.queue_free()

@@ -39,6 +39,29 @@ signal quest_approved(faction: StringName, quest_id: StringName)
 signal quest_rejected(faction: StringName, quest_id: StringName)
 signal quest_completed(faction: StringName, quest_id: StringName)
 
+# --- Factions ---
+signal faction_morale_changed(faction_id: StringName, new_morale: int, old_morale: int)
+
+# --- Economy ---
+signal gold_changed(new_amount: int, old_amount: int)
+signal mana_changed(new_amount: int, old_amount: int)
+
+# --- Edicts ---
+signal edict_enacted(edict_id: StringName)
+signal edict_revoked(edict_id: StringName)
+signal edict_expired(edict_id: StringName)
+
+# --- Stability ---
+signal stability_changed(new_value: int, old_value: int)
+signal alert_level_changed(new_level: StringName)
+signal game_over
+
+# --- Movement ---
+signal movement_proposed(direction: Vector3i)
+signal city_moved(old_center: Vector3i, new_center: Vector3i)
+signal transit_started
+signal transit_ended
+
 # --- Ruins ---
 signal ruin_discovered(coord: Vector3i, ruin_type: StringName)
 signal ruin_exploration_started(coord: Vector3i)
