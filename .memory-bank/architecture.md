@@ -144,10 +144,20 @@ Plains 40%, Forest 25%, Rocky 15%, Swamp 10%, Ruins 10%
 - `ScenarioLoader` static utility (load from `res://scripts/data/scenarios/`, apply to game systems)
 - `the_wildtide.tres` MVP scenario
 
-### 15. Utility AI Config
-- `UtilityAIConfig` Resource (scoring weights: need, affinity, adjacency, faction, penalty; pollution curve; era placement rates; alignment thresholds; performance settings)
+### 15. Utility AI
+- `UtilityAIConfig` Resource (scoring weights: need, affinity, adjacency, faction, zone, penalty; pollution curve; era placement rates; alignment thresholds; performance settings)
 - `ai_weights_normal.tres` Normal mode preset
-- Behavior logic not yet implemented
+- `UtilityAI` Node — scoring-based building placement (evaluate hex×type candidates, select top N per Era)
+- **Zone Affinity** (6th scoring factor): 4 soft zones (Core, Residential, Production, Defense Perimeter). `+0.3` preferred, `-0.2` conflicting. Zone data per-hex (`zone_type` enum), generated once by `CityFootprintInitializer`
+- **Skyline Rules**: Cluster penalty `-0.15` when 3+ adjacent same building type
+
+### 16. UI/HUD System
+
+- `GameHUD` CanvasLayer — root controller, phase-conditional panel visibility
+- 10 panels: PhaseTimerPanel, SpeedControls, MetricsPanel, ResourcePanel, StabilityPanel, FactionPanel, QuestPanel+QuestCard, EdictPanel, WaveWarningPanel, GameOverPanel
+- `HudThemeSetup` — programmatic theme (dark semi-transparent panels)
+- Signal-driven updates via EventBus — no `_process` polling (exception: 0.1s Timer for phase progress bar)
+- Manager injection: `inject_managers(quest_mgr, edict_mgr, economy_mgr)`
 
 ## GameManager Extensions
 - `scenario_id: StringName` — tracks active scenario (default: `&"the_wildtide"`)
@@ -159,6 +169,7 @@ Plains 40%, Forest 25%, Rocky 15%, Swamp 10%, Ruins 10%
 - `region: int` — RegionType enum (STARTING, MID, LATE, RIFT_CORE)
 - `rift_density: float` — per-hex Rift density value
 - `pollution_level: float` — per-hex pollution accumulation
+- `zone_type: int` — ZoneType enum (NONE, CORE, RESIDENTIAL, PRODUCTION, DEFENSE_PERIMETER)
 
 ## Rendering
 - Godot 4.x Forward+ renderer

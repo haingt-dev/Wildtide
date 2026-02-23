@@ -1,7 +1,7 @@
 # Context: Wildtide
 
 ## Current Phase
-**Early Prototype — All 15 core systems COMPLETE.** Original 9 (HexGrid, MetricSystem, CycleTimer/GameManager, EventBus, Factions/Quests, Wave, Ancient Ruins, Buildings, SaveSystem) + 6 new from GDD v19 sync (Economy, Edicts, Stability, Movement, Scenario, UtilityAI config). 524 GUT tests passing. Ready for Utility AI behavior logic, Art POC, or UI.
+**Early Prototype — All 17 systems COMPLETE + UI/HUD + Zone Affinity.** Original 9 + 6 from GDD v19 sync + UtilityAI behavior + UI/HUD system + Zone Affinity/Skyline Rules. 667 GUT tests passing across 45 test files. Ready for Main Game Scene (wire up all systems), Art POC, or asset integration.
 
 ## Project Timeline
 
@@ -35,6 +35,10 @@
 | 2026-02-23 | GDD fix: Resolved Scenario Modifiers open question — Hell/Zen mode is separate ScenarioModifier layer (not baked into ScenarioData). Application order: ScenarioData → ScenarioModifier → Edicts. |
 | 2026-02-23 | GDD audit: Full 19-section cross-reference check. Fixed 2 critical (win condition mismatch — added fragment/Rift Core requirements to WinConditionData; Defense is derived score not state metric), 2 high (biome distribution sync, save system scenario_id + codex.json), 5 medium (era transition annotation, starting amounts, era config note, missing References in Wave + Quest System), 12 back-references added across 10 sections. GDD now fully internally consistent. |
 | 2026-02-24 | **GDD v19 prototype sync COMPLETE.** 6 new systems: EconomyManager (gold/mana/capacity, transit penalty), EdictManager (enact/expire, 8 edict .tres), StabilityTracker (0-100 stability, alert levels, game over), MovementManager (city footprint skeleton, transit state), ScenarioLoader (load/apply .tres), UtilityAIConfig (scoring weights resource). HexCell expanded (fog_state, region, rift_density, pollution_level). SaveSystem expanded 4→7 JSON files (economy, stability, edicts+movement). GameManager gains era tracking + scenario_id. 524 GUT tests passing. |
+| 2026-02-24 | **UtilityAI behavior logic COMPLETE.** `UtilityAI` Node with scoring-based building placement (evaluate all hex×type candidates, pick top N per Era). 612 GUT tests passing. |
+| 2026-02-24 | **UI/HUD System COMPLETE.** 13 scripts (`scripts/ui/`), 12 scenes (`scenes/ui/`), 7 test files. GameHUD CanvasLayer + 10 panels: PhaseTimerPanel, SpeedControls, MetricsPanel, ResourcePanel, StabilityPanel, FactionPanel, QuestPanel+QuestCard, EdictPanel, WaveWarningPanel, GameOverPanel. Signal-driven updates via EventBus, no `_process` polling. 659 GUT tests passing. |
+| 2026-02-24 | **GDD update: Urban Planning Logic.** WT - Utility AI (zone affinity scoring factor, 4 soft zones, building zone preferences, CityFootprintInitializer). WT - Hexagonal Terrain (City Skeleton — main axis, soft zones, landmark slots). WT - Building Evolution (Skyline Rules — cluster penalty, biome seep visuals). |
+| 2026-02-24 | **Zone Affinity + Skyline Rules IMPLEMENTED.** ZoneType enum (5 values), HexCell.zone_type, BuildingData preferred/conflicting_zone, UtilityAI 6-factor formula with zone affinity + cluster penalty. 6 building .tres updated with zone preferences. gdlintrc max-public-methods raised 40→50. 667 GUT tests passing. |
 
 ## Recent Decisions
 
@@ -61,6 +65,9 @@
 - **Scenario System**: ScenarioData .tres = single source of truth for all scenario config. Sub-resources: MapPreset, FactionConfig, WinConditionData. MVP: 1 scenario "The Wildtide". ScenarioModifier = separate layer for Hell/Zen (stacks on top). Application order: ScenarioData → ScenarioModifier → Edicts.
 - **Replayability**: Remnant System (ghost footprint data persists via codex.json), Faction Exclusivity (2-faction limit per run), Codex (persistent unlock tracking at user://codex.json), Rift Core randomization.
 - **Defense is a derived score** (not a state metric): `defense_score = (watchtower_count / city_hex_count) + biome_defense_bonus_avg`
+- **Urban Planning — Zone Affinity**: City footprint divided into 4 soft zones (Core, Residential, Production, Defense Perimeter). Each building has preferred/conflicting zone (+0.3/-0.2 score). Zone data stored per-hex, generated once by `CityFootprintInitializer` on city settle.
+- **City Skeleton**: Main Axis (best biome direction, commerce affinity), Soft Zones (4 concentric rings), Landmark Slots (3-5 pre-tagged hexes in Core Zone for faction HQ/civic).
+- **Skyline Rules**: Cluster penalty -0.15 when 3+ adjacent same type. Biome seep visuals (baked mesh variants per biome — forest vines, rocky base, swamp waterline).
 - **Starting resources**: 100 Gold, 50 Mana (capacity 100/100). Era transitions free in MVP (automatic by cycle count).
 - **Kaiju-class Wave framing**: Wave enemies are Kaiju-class entities. Region Modifier scales wave power (Low ×0.8, Medium ×1.0, High ×1.5, Rift Core ×2.0). Formula: `base × Era × Region`.
 - **Move/Stay Decision**: Conditional 5th phase every 3-4 cycles. Movement triggers: resource depletion (<20% capacity), pollution critical (>80% for 2 cycles), faction request, Migration Edict, Sovereign Quest "Mandate Migration". Transit costs 1 cycle (-50% production, +Anxiety).
@@ -86,8 +93,10 @@
 - **Stability** — COMPLETE. StabilityConfig Resource (thresholds, multipliers, alert levels). StabilityTracker Node (0-100 stability, wave damage/defense, morale, depletion, solidarity, festival, artifact failure, alert levels, game over trigger, EVOLVE auto-checks).
 - **Movement** — COMPLETE (skeleton). MovementManager Node (city_center, transit state, propose/execute/end_transit API, EVOLVE phase hook). Full movement logic deferred until large map implementation.
 - **Scenario** — COMPLETE. ScenarioData/MapPreset/FactionConfig/WinConditionData/ScenarioModifier Resources. ScenarioLoader static utility (load/apply). the_wildtide.tres MVP scenario.
-- **UtilityAI Config** — COMPLETE. UtilityAIConfig Resource (scoring weights, pollution curve, era placement rates, alignment thresholds). ai_weights_normal.tres preset. Behavior logic deferred.
-- **Next up**: Utility AI behavior logic, Art POC, UI/HUD, or asset pack integration.
+- **UtilityAI Config** — COMPLETE. UtilityAIConfig Resource (scoring weights, pollution curve, era placement rates, alignment thresholds). ai_weights_normal.tres preset.
+- **UtilityAI Behavior** — COMPLETE. UtilityAI Node (scoring-based building placement, 6-factor formula with zone affinity + cluster penalty, evaluate hex×type candidates, select top N per Era). 667 GUT tests.
+- **UI/HUD System** — COMPLETE. GameHUD CanvasLayer + 10 panels. Signal-driven via EventBus. HudThemeSetup programmatic theme. Manager injection for QuestPanel, EdictPanel, ResourcePanel.
+- **Next up**: Main Game Scene (wire up all systems), Art POC, CityFootprintInitializer.
 
 ## Open Tasks
 
@@ -112,9 +121,14 @@
 - [x] Expand SaveSystem (4→7 JSON files, economy/stability/edicts+movement, backward compat)
 - [x] Expand GameManager (era tracking, scenario_id, era_cycle_thresholds)
 - [x] Expand HexCell (fog_state, region, rift_density, pollution_level)
-- [ ] Implement Utility AI behavior logic for NPC autonomous building
+- [x] Implement Utility AI behavior logic for NPC autonomous building
+- [x] Implement UI/HUD system (13 scripts, 12 scenes, 7 test files, 659 tests)
+- [x] GDD update: Urban Planning Logic (zone affinity, city skeleton, skyline rules)
+- [x] Implement Zone Affinity + Skyline Rules (ZoneType enum, HexCell.zone_type, BuildingData zone fields, UtilityAI 6-factor formula, cluster penalty, 6 .tres updated, 8 new tests)
+- [ ] Wire up Main Game Scene (connect all 17 systems + UI/HUD)
 - [ ] Art style proof-of-concept (Low Poly Diorama)
 - [ ] Integrate selected asset packs (kenney_pirate-kit, kenney_fantasy-town-kit_2.0)
+- [ ] Implement CityFootprintInitializer (zone layout, main axis, landmark slots)
 
 ## Known Risks
 
@@ -145,7 +159,9 @@
 - **Movement**: MovementManager Node (skeleton — transit state, city footprint API)
 - **Scenario**: ScenarioData/MapPreset/FactionConfig/WinConditionData/ScenarioModifier Resources, ScenarioLoader, the_wildtide.tres
 - **UtilityAI Config**: UtilityAIConfig Resource, ai_weights_normal.tres
-- **Tests**: 524 unit tests across 37 test files
+- **UtilityAI Behavior**: UtilityAI Node, scoring-based placement, zone affinity (6th factor), cluster penalty (skyline rules)
+- **UI/HUD**: GameHUD, PhaseTimerPanel, SpeedControls, MetricsPanel, ResourcePanel, StabilityPanel, FactionPanel, QuestPanel, QuestCard, EdictPanel, WaveWarningPanel, GameOverPanel, HudThemeSetup
+- **Tests**: 667 unit tests across 45 test files
 
 ## What's Not Working Yet
 - GUT plugin needs to be enabled in Godot editor (Done)
