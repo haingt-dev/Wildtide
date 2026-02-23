@@ -33,6 +33,9 @@ signal hex_scarred(coord: Vector3i, amount: float)
 signal building_placed(coord: Vector3i, building_id: StringName)
 signal building_removed(coord: Vector3i, building_id: StringName)
 
+# --- AI ---
+signal ai_buildings_placed(placements: Array)
+
 # --- Quests ---
 signal quest_proposed(faction: StringName, quest_id: StringName)
 signal quest_approved(faction: StringName, quest_id: StringName)
