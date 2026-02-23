@@ -1,0 +1,49 @@
+# Default: auto-detect text files, normalize line endings
+* text=auto eol=lf
+
+# Godot text-based files — ensure LF and diffable
+*.gd text diff
+*.tscn text diff
+*.tres text diff
+*.gdshader text diff
+*.gdshaderinc text diff
+*.cfg text diff
+project.godot text diff
+
+# Image assets — binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.svg text
+*.bmp binary
+*.tga binary
+*.hdr binary
+*.exr binary
+
+# 3D model assets — binary
+*.glb binary
+*.gltf text
+*.fbx binary
+*.obj text
+*.blend binary
+*.dae text
+
+# Audio assets — binary
+*.wav binary
+*.ogg binary
+*.mp3 binary
+
+# Font assets — binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+
+# Video — binary
+*.ogv binary
+*.webm binary
+*.mp4 binary
+
+# Godot import cache (auto-generated)
+*.import text

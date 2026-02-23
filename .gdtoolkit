@@ -1,0 +1,19 @@
+# gdtoolkit 4.x configuration — https://github.com/Scony/godot-gdscript-toolkit
+# Applies to both gdlint and gdformat when run from the project root.
+
+[gdlint]
+# Line length — matches .editorconfig intent; generous for readability
+max-line-length = 120
+
+# Function body length (statements, not raw lines)
+max-function-length = 60
+
+# File length (total lines including blanks/comments)
+max-file-length = 500
+
+# Disable rules that conflict with project conventions (uncomment as needed):
+# disabled = function-name
+
+[gdformat]
+# Line length for the formatter — keep in sync with gdlint
+line_length = 120

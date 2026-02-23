@@ -51,3 +51,6 @@ secrets.*
 # GUT test output
 .gut_editor_config.json
 .gut_editor_shortcuts.cfg
+
+# GDD symlinked from Obsidian vault — ignore vault-only files
+docs/gdd/Memory Bank/

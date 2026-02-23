@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "godot-docs": {
+      "command": "podman",
+      "args": ["run", "--rm", "-i", "localhost/godot-docs-mcp:latest"]
+    },
+    "context7": {
+      "command": "podman",
+      "args": ["run", "--rm", "-i", "localhost/context7-mcp:latest"]
+    }
+  }
+}

@@ -1,0 +1,4 @@
+FROM docker.io/node:22-alpine
+WORKDIR /app
+RUN npm init -y && npm install @nuskey8/godot-docs-mcp@latest
+ENTRYPOINT ["node", "node_modules/@nuskey8/godot-docs-mcp/script/index.js"]

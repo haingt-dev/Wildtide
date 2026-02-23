@@ -1,30 +1,30 @@
-[gd_scene load_steps=6 format=3 uid="uid://debug_hex_scene"]
+[gd_scene format=3 uid="uid://ch0t5ny1h6dll"]
 
-[ext_resource type="Script" path="res://scenes/debug/hex_debug_scene.gd" id="1"]
-[ext_resource type="Script" path="res://scripts/core/hex_grid_renderer.gd" id="2"]
-[ext_resource type="Script" path="res://scripts/core/hex_highlight.gd" id="3"]
-[ext_resource type="Script" path="res://scripts/debug/hex_debug_camera.gd" id="4"]
-[ext_resource type="Script" path="res://scripts/debug/hex_debug_info.gd" id="5"]
+[ext_resource type="Script" uid="uid://bsjsdammcmm8d" path="res://scenes/debug/hex_debug_scene.gd" id="1"]
+[ext_resource type="Script" uid="uid://c54o7x6o6abhp" path="res://scripts/core/hex_grid_renderer.gd" id="2"]
+[ext_resource type="Script" uid="uid://cij0lfl74jrj8" path="res://scripts/core/hex_highlight.gd" id="3"]
+[ext_resource type="Script" uid="uid://n2tu46fhc5q" path="res://scripts/debug/hex_debug_camera.gd" id="4"]
+[ext_resource type="Script" uid="uid://bq8tv0ts646ce" path="res://scripts/debug/hex_debug_info.gd" id="5"]
 
-[node name="HexDebugScene" type="Node3D"]
+[node name="HexDebugScene" type="Node3D" unique_id=1796689045]
 script = ExtResource("1")
 
-[node name="HexGridRenderer" type="Node3D" parent="."]
+[node name="HexGridRenderer" type="Node3D" parent="." unique_id=1645050116]
 script = ExtResource("2")
 
-[node name="HexHighlight" type="Node3D" parent="."]
+[node name="HexHighlight" type="Node3D" parent="." unique_id=1733403197]
 script = ExtResource("3")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=334367294]
 transform = Transform3D(0.866, -0.433, 0.25, 0, 0.5, 0.866, -0.5, -0.75, 0.433, 0, 20, 0)
 shadow_enabled = true
 
-[node name="HexDebugCamera" type="Camera3D" parent="."]
+[node name="HexDebugCamera" type="Camera3D" parent="." unique_id=1094878017]
 script = ExtResource("4")
 
-[node name="CanvasLayer" type="CanvasLayer" parent="."]
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1712280319]
 
-[node name="HexDebugInfo" type="Control" parent="CanvasLayer"]
+[node name="HexDebugInfo" type="Control" parent="CanvasLayer" unique_id=1287544021]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0

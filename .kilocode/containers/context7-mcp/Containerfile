@@ -1,0 +1,4 @@
+FROM docker.io/node:22-alpine
+WORKDIR /app
+RUN npm init -y && npm install @upstash/context7-mcp@latest
+ENTRYPOINT ["npx", "@upstash/context7-mcp"]
