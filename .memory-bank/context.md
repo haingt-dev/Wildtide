@@ -1,7 +1,7 @@
 # Context: Wildtide
 
 ## Current Phase
-**Early Prototype — All 9 core systems COMPLETE.** HexGrid, MetricSystem, CycleTimer/GameManager, EventBus, Factions/Quests, Wave, Ancient Ruins, Buildings, SaveSystem. Ready for Utility AI, Art POC, or UI.
+**Early Prototype — All 15 core systems COMPLETE.** Original 9 (HexGrid, MetricSystem, CycleTimer/GameManager, EventBus, Factions/Quests, Wave, Ancient Ruins, Buildings, SaveSystem) + 6 new from GDD v19 sync (Economy, Edicts, Stability, Movement, Scenario, UtilityAI config). 524 GUT tests passing. Ready for Utility AI behavior logic, Art POC, or UI.
 
 ## Project Timeline
 
@@ -30,6 +30,11 @@
 | 2026-02-23 | GDD fix: Resolved 5 ambiguities — Sovereign Quest shared slot (trade-off: migrate vs upgrade), The Wall "Strategic Retreat" (conditional move when Wave damage >50%), Wave During Transit (power -50%), Era transitions (automatic by cycle count), cross-references added. |
 | 2026-02-23 | GDD fix: Resolved 6 contradictions — FoW "Scouted"→"Revealed", resource depletion 30%→20%, transit 1-2→1 cycle, pollution trigger 80%/2 cycles, hand-crafted→procedural+hand-tuned, biome composition 250→1750 scale. Files: Movement System, Core Loop, Hex Terrain, Biomes. |
 | 2026-02-23 | GDD re-review: Full 17-section analysis. Fixed 3 contradictions (Rift Shards/Era auto, edicts "2-3"→"2", Mandate Migration cost standardized to "70% Gold + 70% Mana"). Defined 3 undefined mechanics (Faction Morale 0-100 range, edict expiry auto-disable, wave transit probability 50%). Added 4 cross-references (Core Loop→Edict/Utility AI, Metric System→Edict, Design Pillars references section). Files: Economy, Design Pillars, Quest System, Edict System, The Wave, Core Loop, Metric System, Core Vision. |
+| 2026-02-23 | GDD update: Created WT - Replayability (section 18) — Remnant System (ghost footprint data persists across runs), Faction Exclusivity (2-faction limit per run), Codex (persistent unlock tracking), Rift Core randomization. |
+| 2026-02-23 | GDD update: Created WT - Scenario System (section 19) — ScenarioData .tres Resource with MapPreset, FactionConfig, WinConditionData sub-resources. MVP: 1 scenario "The Wildtide". DLC-ready architecture. |
+| 2026-02-23 | GDD fix: Resolved Scenario Modifiers open question — Hell/Zen mode is separate ScenarioModifier layer (not baked into ScenarioData). Application order: ScenarioData → ScenarioModifier → Edicts. |
+| 2026-02-23 | GDD audit: Full 19-section cross-reference check. Fixed 2 critical (win condition mismatch — added fragment/Rift Core requirements to WinConditionData; Defense is derived score not state metric), 2 high (biome distribution sync, save system scenario_id + codex.json), 5 medium (era transition annotation, starting amounts, era config note, missing References in Wave + Quest System), 12 back-references added across 10 sections. GDD now fully internally consistent. |
+| 2026-02-24 | **GDD v19 prototype sync COMPLETE.** 6 new systems: EconomyManager (gold/mana/capacity, transit penalty), EdictManager (enact/expire, 8 edict .tres), StabilityTracker (0-100 stability, alert levels, game over), MovementManager (city footprint skeleton, transit state), ScenarioLoader (load/apply .tres), UtilityAIConfig (scoring weights resource). HexCell expanded (fog_state, region, rift_density, pollution_level). SaveSystem expanded 4→7 JSON files (economy, stability, edicts+movement). GameManager gains era tracking + scenario_id. 524 GUT tests passing. |
 
 ## Recent Decisions
 
@@ -47,12 +52,16 @@
 - **3 Autoload singletons**: GameManager (cycle state), MetricSystem (metrics + alignment), EventBus (global signals). No additional autoloads.
 - **GUT 9.x** for testing — unit tests in `test/unit/`, integration tests in `test/integration/`
 - **Asset pipeline**: Meshy.ai → Blender (decimate) → Godot GLB. Flat color materials only (no textures)
-- **Building Evolution**: 3 mesh tiers per Era, Science/Magic swap = 6 visual states per building type
+- **Building Evolution**: 3 mesh tiers per Era, Science/Magic swap = 6 visual states per building type. Era cycle ranges configurable via ScenarioData.era_cycle_thresholds.
 - **City Must Grow**: Horizontal sprawl, visual connectors between adjacent buildings, Era transition "wow moment"
 - **Metric Visual Feedback** (MVP): Pollution → sky/trees degrade, Anxiety → NPC chaos, Harmony → warm colors
 - **Moving City**: City moves across large fixed map. Triggers: resource depletion, pollution/damage, faction request, Migration Edict, Sovereign Quest "Mandate Migration" (70% reserves, 1/Era). NO direct player trigger (Indirect Sovereignty). Ghost footprints left behind (mirrors The Ancients' history).
 - **Rift Density System**: Per-region density increases near win condition location. Waves spawn from 3 fixed Rifts + high-density regions city passes through.
-- **Endgame Artifacts**: Science → "Wormhole Stabilizer" (Tech Fragments from ruins, seal Rifts). Magic → "The Accord" (Rune Shards from shrines + Rift zones, merge with Wave).
+- **Endgame Artifacts**: Science → "Wormhole Stabilizer" (15 Tech Fragments + Rift Core + 3 construction cycles). Magic → "The Accord" (15 Rune Shards + Rift Core + 3 construction cycles). Requirements defined in WinConditionData.
+- **Scenario System**: ScenarioData .tres = single source of truth for all scenario config. Sub-resources: MapPreset, FactionConfig, WinConditionData. MVP: 1 scenario "The Wildtide". ScenarioModifier = separate layer for Hell/Zen (stacks on top). Application order: ScenarioData → ScenarioModifier → Edicts.
+- **Replayability**: Remnant System (ghost footprint data persists via codex.json), Faction Exclusivity (2-faction limit per run), Codex (persistent unlock tracking at user://codex.json), Rift Core randomization.
+- **Defense is a derived score** (not a state metric): `defense_score = (watchtower_count / city_hex_count) + biome_defense_bonus_avg`
+- **Starting resources**: 100 Gold, 50 Mana (capacity 100/100). Era transitions free in MVP (automatic by cycle count).
 - **Kaiju-class Wave framing**: Wave enemies are Kaiju-class entities. Region Modifier scales wave power (Low ×0.8, Medium ×1.0, High ×1.5, Rift Core ×2.0). Formula: `base × Era × Region`.
 - **Move/Stay Decision**: Conditional 5th phase every 3-4 cycles. Movement triggers: resource depletion (<20% capacity), pollution critical (>80% for 2 cycles), faction request, Migration Edict, Sovereign Quest "Mandate Migration". Transit costs 1 cycle (-50% production, +Anxiety).
 - **Movement Requests**: Factions submit movement requests alongside building quests. Lens→ruins, Veil→high Rift density, Coin→resource diversity, Wall→"Stay and Fortify". Same approve/reject flow in Influence phase.
@@ -71,8 +80,14 @@
 - **Wave System** — COMPLETE. WaveConfig Resource (Era scaling, 4 Eras across 16 cycles, multipliers [1.0, 1.8, 3.0, 5.0]). WaveManager Node (abstract damage simulation — wave power split across 3 Rifts, distance falloff, biome defense reduction). wave_config_normal.tres for Normal mode.
 - **Ancient Ruins** — COMPLETE. RuinType enum (Observatory, Energy Shrine, Archive Vault) + 6 exploration state constants. RuinData Resource (yields, duration, rarity, damage penalty). RuinRegistry with weighted-random type selection. 3 .tres files. RuinsManager Node (type assignment, discovery, exploration lifecycle on EVOLVE, wave damage via hex_scarred). ActiveExploration RefCounted for runtime state.
 - **Buildings** — COMPLETE. BuildingType enum (6 categories), BuildingData Resource (id, duration, metric_effects, alignment_push, biome_affinity). BuildingRegistry (DirAccess scan pattern). 6 .tres templates (homestead, reactor, shrine, market, watchtower, workshop). BuildingManager Node (place/remove API, float-progress construction ticking on EVOLVE, biome speed + scar penalty + affinity bonus, completed building metric effects). ActiveConstruction RefCounted.
-- **SaveSystem** — COMPLETE. SaveSerializer RefCounted (static methods, pure data conversion for all 8 systems, Vector3i→array encoding, Resource ref by ID). SaveSystem Node (4 JSON files per save slot at user://saves/<slot>/, autosave on WAVE phase, all-or-nothing load validation, slot management API).
-- **Next up**: Utility AI, Art POC, UI/HUD, or asset pack integration.
+- **SaveSystem** — COMPLETE. SaveSerializer RefCounted (static methods, pure data conversion for all 8 systems, Vector3i→array encoding, Resource ref by ID). SaveSystem Node (7 JSON files per save slot: 4 core + economy/stability/edicts, autosave on WAVE phase, backward-compatible load).
+- **Economy** — COMPLETE. EconomyConfig Resource (starting amounts, capacity, transit penalty, income rates). EconomyManager Node (gold/mana tracking, spend/earn/capacity API, transit production penalty, EVOLVE income ticking).
+- **Edicts** — COMPLETE. EdictData Resource (id, effects, duration, cooldown, cost). EdictRegistry (DirAccess scan). EdictManager Node (enact/expire, active edict tracking, EVOLVE tick). 8 edict .tres templates.
+- **Stability** — COMPLETE. StabilityConfig Resource (thresholds, multipliers, alert levels). StabilityTracker Node (0-100 stability, wave damage/defense, morale, depletion, solidarity, festival, artifact failure, alert levels, game over trigger, EVOLVE auto-checks).
+- **Movement** — COMPLETE (skeleton). MovementManager Node (city_center, transit state, propose/execute/end_transit API, EVOLVE phase hook). Full movement logic deferred until large map implementation.
+- **Scenario** — COMPLETE. ScenarioData/MapPreset/FactionConfig/WinConditionData/ScenarioModifier Resources. ScenarioLoader static utility (load/apply). the_wildtide.tres MVP scenario.
+- **UtilityAI Config** — COMPLETE. UtilityAIConfig Resource (scoring weights, pollution curve, era placement rates, alignment thresholds). ai_weights_normal.tres preset. Behavior logic deferred.
+- **Next up**: Utility AI behavior logic, Art POC, UI/HUD, or asset pack integration.
 
 ## Open Tasks
 
@@ -88,7 +103,16 @@
 - [x] Implement Wave System (WaveConfig resource, WaveManager damage simulation)
 - [x] Implement Buildings (placement, construction, metric effects)
 - [x] Implement SaveSystem (JSON split files, autosave, slot management)
-- [ ] Implement Utility AI for NPC autonomous building
+- [x] Implement Economy system (EconomyConfig, EconomyManager, gold/mana tracking)
+- [x] Implement Edict system (EdictData, EdictRegistry, EdictManager, 8 edict templates)
+- [x] Implement Stability system (StabilityConfig, StabilityTracker, alert levels, game over)
+- [x] Implement Movement skeleton (MovementManager, transit state, city footprint)
+- [x] Implement Scenario system (ScenarioData, ScenarioLoader, the_wildtide.tres)
+- [x] Implement UtilityAI config (UtilityAIConfig resource, ai_weights_normal.tres)
+- [x] Expand SaveSystem (4→7 JSON files, economy/stability/edicts+movement, backward compat)
+- [x] Expand GameManager (era tracking, scenario_id, era_cycle_thresholds)
+- [x] Expand HexCell (fog_state, region, rift_density, pollution_level)
+- [ ] Implement Utility AI behavior logic for NPC autonomous building
 - [ ] Art style proof-of-concept (Low Poly Diorama)
 - [ ] Integrate selected asset packs (kenney_pirate-kit, kenney_fantasy-town-kit_2.0)
 
@@ -98,7 +122,7 @@
 - Godot C# on Linux has occasional export issues (reason for GDScript-only decision)
 
 ## What's Working
-- GDD is fully authored and internally consistent (17 sections)
+- GDD is fully authored and internally consistent (19 sections, fully cross-referenced)
 - CLAUDE.md is self-contained with all project context (~180 lines)
 - Memory Bank restored and up-to-date for all agents
 - Game code folder structure in place (scripts/, scenes/, test/)
@@ -115,7 +139,13 @@
 - **Ancient Ruins**: RuinType, RuinData, RuinRegistry, 3 .tres, RuinsManager, ActiveExploration
 - **Buildings**: BuildingType, BuildingData, BuildingRegistry, 6 .tres, BuildingManager, ActiveConstruction
 - **SaveSystem**: SaveSerializer (pure data conversion), SaveSystem Node (file I/O, autosave, slot management)
-- **Tests**: 381 unit tests across 25 test files
+- **Economy**: EconomyConfig Resource, EconomyManager Node, economy_config_normal.tres
+- **Edicts**: EdictData Resource, EdictRegistry, EdictManager Node, 8 edict .tres templates
+- **Stability**: StabilityConfig Resource, StabilityTracker Node, stability_config_normal.tres
+- **Movement**: MovementManager Node (skeleton — transit state, city footprint API)
+- **Scenario**: ScenarioData/MapPreset/FactionConfig/WinConditionData/ScenarioModifier Resources, ScenarioLoader, the_wildtide.tres
+- **UtilityAI Config**: UtilityAIConfig Resource, ai_weights_normal.tres
+- **Tests**: 524 unit tests across 37 test files
 
 ## What's Not Working Yet
 - GUT plugin needs to be enabled in Godot editor (Done)

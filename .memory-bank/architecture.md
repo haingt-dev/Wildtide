@@ -113,9 +113,52 @@ Plains 40%, Forest 25%, Rocky 15%, Swamp 10%, Ruins 10%
 - **Environmental lore delivery**: Ruins provide world-building via tooltip flavor text
 
 ### 9. Save System
-- JSON-based, split files: `meta.json`, `world.json`, `metrics.json`, `factions.json`
+- JSON-based, split files: 4 core (`meta.json`, `world.json`, `metrics.json`, `factions.json`) + 3 extra (`economy.json`, `stability.json`, `edicts.json` with embedded movement data)
 - Autosave at start of each Wave phase
+- Backward-compatible loading (core files required, extra files optional)
 - No encryption for MVP
+
+### 10. Economy System
+- `EconomyConfig` Resource (starting gold/mana, capacity, transit penalty, income rates)
+- `EconomyManager` Node (gold/mana tracking, spend/earn with capacity clamping, transit production penalty, EVOLVE income ticking)
+- `economy_config_normal.tres` preset
+
+### 11. Edict System
+- `EdictData` Resource (id, effects dict, duration, cooldown, cost)
+- `EdictRegistry` (DirAccess scan from `scripts/data/edicts/`)
+- `EdictManager` Node (enact/expire, active edict tracking, EVOLVE tick for duration countdown)
+- 8 edict `.tres` templates (boost production, festival, martial law, open borders, ration resources, science/magic priority, migration)
+
+### 12. Stability System
+- `StabilityConfig` Resource (thresholds, gain/loss multipliers, alert level breakpoints, stability floor)
+- `StabilityTracker` Node (0-100 stability, wave damage/defense assessment, faction morale check, resource depletion tracking, solidarity bonus, festival bonus, artifact failure, 4 alert levels: normal→yellow→red→final, game over trigger)
+- Auto-checks resource depletion and solidarity on EVOLVE phase via economy_manager ref
+
+### 13. Movement System (skeleton)
+- `MovementManager` Node (city_center Vector3i, transit state, propose/execute/end_transit API, EVOLVE phase hook for transit countdown)
+- Full movement logic deferred until large map (~1500 hexes) implementation
+
+### 14. Scenario System
+- `ScenarioData` Resource (map_preset, faction_configs, win_conditions, era_cycle_thresholds, starting resources)
+- Sub-resources: `MapPreset`, `FactionConfig`, `WinConditionData`, `ScenarioModifier`
+- `ScenarioLoader` static utility (load from `res://scripts/data/scenarios/`, apply to game systems)
+- `the_wildtide.tres` MVP scenario
+
+### 15. Utility AI Config
+- `UtilityAIConfig` Resource (scoring weights: need, affinity, adjacency, faction, penalty; pollution curve; era placement rates; alignment thresholds; performance settings)
+- `ai_weights_normal.tres` Normal mode preset
+- Behavior logic not yet implemented
+
+## GameManager Extensions
+- `scenario_id: StringName` — tracks active scenario (default: `&"the_wildtide"`)
+- `era_cycle_thresholds: Array[int]` — cycle numbers where each era begins (default: `[1, 6, 11, 16]`)
+- `get_current_era() -> int` — derived from cycle_number and thresholds
+
+## HexCell Extensions
+- `fog_state: int` — FogState enum (HIDDEN, REVEALED, ACTIVE, INACTIVE)
+- `region: int` — RegionType enum (STARTING, MID, LATE, RIFT_CORE)
+- `rift_density: float` — per-hex Rift density value
+- `pollution_level: float` — per-hex pollution accumulation
 
 ## Rendering
 - Godot 4.x Forward+ renderer
