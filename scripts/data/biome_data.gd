@@ -23,3 +23,7 @@ extends Resource
 @export_group("Alignment")
 ## -1.0 = Magic, 0.0 = Neutral, +1.0 = Science
 @export_range(-1.0, 1.0) var alignment_affinity: float = 0.0
+
+@export_group("Ambient Threats")
+## Base threat contribution from this biome (0.0-1.0). Swamp=0.4, Ruins=0.35.
+@export_range(0.0, 1.0) var base_threat: float = 0.0

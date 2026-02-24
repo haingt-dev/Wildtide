@@ -147,6 +147,8 @@ func _collect_candidates() -> Array[Vector3i]:
 			continue
 		if cell.scar_state >= SCAR_AVOIDANCE_THRESHOLD:
 			continue
+		if cell.ambient_threat_level >= AmbientThreatManager.THREAT_HIGH:
+			continue
 		if not _zone_has_capacity(cell.zone_type, zone_counts):
 			continue
 		result.append(cell.coord)
@@ -203,6 +205,7 @@ func _score_placement(coord: Vector3i, cell: HexCell, bdata: BuildingData) -> fl
 	score += _calc_distance_bonus(coord)
 	score += _calc_cluster_penalty(coord, bdata)
 	score += _calc_threat_bonus(cell, bdata)
+	score += _calc_ambient_threat_penalty(cell)
 	score += _calc_weapon_diversity_penalty(bdata)
 	score += _calc_defense_need_bonus(bdata)
 	return score
@@ -327,6 +330,16 @@ func _calc_weapon_diversity_penalty(bdata: BuildingData) -> float:
 
 
 ## Defense need bonus — boost defense/weapon buildings when defense ratio is low.
+## Ambient threat penalty — AI avoids high threat hexes.
+func _calc_ambient_threat_penalty(cell: HexCell) -> float:
+	var t: float = cell.ambient_threat_level
+	if t < AmbientThreatManager.THREAT_LOW:
+		return 0.0
+	if t >= AmbientThreatManager.THREAT_MEDIUM:
+		return -0.25
+	return -0.1
+
+
 func _calc_defense_need_bonus(bdata: BuildingData) -> float:
 	if bdata.building_id not in DEFENSE_BUILDINGS:
 		return 0.0

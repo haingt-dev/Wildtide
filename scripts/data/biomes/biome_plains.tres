@@ -13,3 +13,4 @@ defense_bonus = 0.0
 metric_push = &""
 metric_push_value = 0.0
 alignment_affinity = 0.0
+base_threat = 0.1

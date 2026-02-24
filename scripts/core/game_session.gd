@@ -18,6 +18,7 @@ var wave_manager: WaveManager
 var movement_manager: MovementManager
 var stability_tracker: StabilityTracker
 var utility_ai: UtilityAI
+var ambient_threat_manager: AmbientThreatManager
 var save_system: SaveSystem
 var hud: GameHUD
 
@@ -98,6 +99,10 @@ func create_managers() -> void:
 	utility_ai.name = "UtilityAI"
 	add_child(utility_ai)
 
+	ambient_threat_manager = AmbientThreatManager.new()
+	ambient_threat_manager.name = "AmbientThreatManager"
+	add_child(ambient_threat_manager)
+
 	save_system = SaveSystem.new()
 	save_system.name = "SaveSystem"
 	add_child(save_system)
@@ -136,6 +141,8 @@ func inject_dependencies() -> void:
 	wave_manager.economy_manager = economy_manager
 	ruins_manager.edict_manager = edict_manager
 	movement_manager.edict_manager = edict_manager
+	ambient_threat_manager.hex_grid = hex_grid
+	ambient_threat_manager.building_manager = building_manager
 
 	# GameManager refs for win condition checking
 	GameManager.ruins_manager = ruins_manager

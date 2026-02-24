@@ -16,6 +16,7 @@ extends Resource
 @export var rift_density: float = 0.0  ## 0.0-1.0, proximity/density of nearby Rifts
 @export var pollution_level: float = 0.0  ## Per-hex pollution, 0.0-1.0
 @export var zone_type: int = ZoneType.Type.NONE
+@export var ambient_threat_level: float = 0.0  ## 0.0-1.0, recalculated each Evolve
 
 
 func is_empty() -> bool:

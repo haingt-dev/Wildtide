@@ -114,7 +114,10 @@ func get_speed_multiplier(coord: Vector3i, building_data: BuildingData) -> float
 	var scar_mult: float = 1.0
 	if cell.scar_state > 0.0:
 		scar_mult = 1.0 - SCAR_SPEED_PENALTY
-	return maxf(biome_speed * scar_mult, 0.01)
+	var threat_mult: float = AmbientThreatManager.get_construction_modifier(
+		cell.ambient_threat_level
+	)
+	return maxf(biome_speed * scar_mult * threat_mult, 0.01)
 
 
 func _on_phase_changed(new_phase: int, _phase_name: StringName) -> void:

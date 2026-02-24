@@ -13,3 +13,4 @@ defense_bonus = 0.0
 metric_push = &"harmony"
 metric_push_value = 0.1
 alignment_affinity = -0.3
+base_threat = 0.1
