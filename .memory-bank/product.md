@@ -115,10 +115,10 @@ City is not stationary — it migrates across a large fixed map.
 
 - **Tool**: Meshy.ai (text-to-3D), fallback Tripo3D. Workflow: Meshy → Blender (decimate) → Godot GLB.
 - **No texture maps** — flat color materials only (consistent style, easy Science/Magic swap, better perf).
-- **Building Evolution**: 3 mesh tiers per Era × 2 alignments = 6 visual states per type. MVP: ~22 meshes total.
+- **Building Evolution**: 3 mesh tiers per Era × 2 alignments = 6 visual states per type. MVP: ~30 meshes total (includes 4 weapon buildings).
 
 ## GDD Status
 
-- **17 sections** total (as of 2026-02-23)
-- All sections internally consistent and production-ready
-- 6 contradictions identified (pending fix), 5 ambiguities to clarify
+- **20 sections** total (as of 2026-02-25)
+- All sections internally consistent, fully cross-referenced, production-ready
+- All contradictions and ambiguities resolved (2 audit rounds complete)

@@ -170,12 +170,27 @@ Plains 40%, Forest 25%, Rocky 15%, Swamp 10%, Ruins 10%
 - `rift_density: float` — per-hex Rift density value
 - `pollution_level: float` — per-hex pollution accumulation
 - `zone_type: int` — ZoneType enum (NONE, CORE, RESIDENTIAL, PRODUCTION, DEFENSE_PERIMETER)
+- `ambient_threat_level: float` — 0.0-1.0, recalculated each EVOLVE by AmbientThreatManager
 
 ## Rendering
 - Godot 4.x Forward+ renderer
 - `MultiMeshInstance3D` for mass objects (grass, birds, drones)
 - 4 custom shaders max (terrain wind, building material swap, sky shift, water tint)
 - Target: 60fps on integrated AMD Radeon (Steam Deck tier)
+
+### 17. Ambient Threat System
+- `AmbientThreatManager` Node — per-hex `ambient_threat_level` (0.0-1.0) recalculated each EVOLVE
+- Formula: weighted sum of rift_density, pollution_level, ruin proximity, biome base_threat, post-wave timer
+- Thresholds: <0.3 normal, 0.3-0.6 minor penalty, 0.6-0.8 medium, >=0.8 blocks building
+- Watchtower suppression: 3-hex radius, 50% Rift Fauna reduction
+- Static modifiers: `get_construction_modifier()`, `get_yield_modifier()` — used by BuildingManager and UtilityAI
+- Post-wave clear: 2-cycle respawn timer after wave ends
+
+### 18. Artifact System (Phase 7)
+- `ArtifactController` RefCounted — lifecycle: IDLE → BUILDING → COMPLETE/FAILED
+- Fragment accumulation in RuinsManager (tech_fragments, rune_shards)
+- Win condition checking in GameManager: alignment + fragments + rift core + artifact completion
+- Building tier advancement (1-3, auto on era change) in BuildingManager
 
 ## Key Patterns
 - **Resources everywhere**: Policy data, Quest data, Metric matrix all in `.tres`

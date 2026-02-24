@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo \"Branch: $(git branch --show-current 2>/dev/null || echo 'n/a')\" && echo \"Recent commits:\" && git log --oneline -5 2>/dev/null && echo '' && echo '--- Memory Bank ---' && for f in .memory-bank/brief.md .memory-bank/context.md .memory-bank/tech.md; do [ -f \"$f\" ] && echo \"=== $(basename $f) ===\" && head -50 \"$f\" && echo ''; done && echo '--- End Memory Bank ---' || true",
+            "command": "echo \"Branch: $(git branch --show-current 2>/dev/null || echo 'n/a')\" && echo \"Recent commits:\" && git log --oneline -5 2>/dev/null && echo '' && echo '--- Memory Bank ---' && for f in .memory-bank/brief.md .memory-bank/context.md .memory-bank/tasks.md .memory-bank/tech.md; do [ -f \"$f\" ] && echo \"=== $(basename $f) ===\" && head -50 \"$f\" && echo ''; done && echo '--- End Memory Bank ---' || true",
             "timeout": 15
           }
         ]

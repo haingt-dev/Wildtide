@@ -19,11 +19,15 @@
 ## Save System
 
 - **Format**: JSON (Godot `FileAccess` + `JSON` classes)
-- **Structure**: Split files for debug friendliness
-  - `save/meta.json` — save name, timestamp, era, cycle count
-  - `save/world.json` — terrain, building positions, rift states
+- **Structure**: Split files for debug friendliness (7 JSON files per slot)
+  - `save/meta.json` — save name, timestamp, era, cycle count, scenario_id
+  - `save/world.json` — terrain, building positions, rift states, zone_type, ambient_threat_level
   - `save/metrics.json` — all metric values
-  - `save/factions.json` — faction states, active quests
+  - `save/factions.json` — faction states, active quests, offensive quests
+  - `save/economy.json` — gold, mana, capacity, rift shards
+  - `save/stability.json` — stability value, alert level
+  - `save/edicts.json` — active edicts + embedded movement data
+- **Version**: SaveSerializer v3 (backward-compatible via `.get()` defaults)
 - **Autosave**: At start of each Wave phase
 - **Encryption**: None for MVP (single-player)
 
@@ -73,7 +77,8 @@
 | **Unit tests** | `test/unit/` | `test_*.gd` files extending `GutTest` |
 | **Integration tests** | `test/integration/` | Cross-system tests |
 | **Test fixtures** | `test/fixtures/` | Mock resources, test data |
-| **CLI run** | `godot -d -s --path "$PWD" addons/gut/gut_cmdln.gd` | CI-compatible |
+| **CLI run** | `godot -d -s --path /absolute/path addons/gut/gut_cmdln.gd` | Use absolute path, `$PWD` fails |
+| **Current** | 856 tests across 55 files | 54 unit + 1 integration |
 
 ## Debug & Tooling
 
