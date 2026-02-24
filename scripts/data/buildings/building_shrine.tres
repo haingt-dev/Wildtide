@@ -15,4 +15,6 @@ metric_effects = { &"harmony": 0.04, &"anxiety": -0.02 }
 alignment_push = -0.15
 biome_affinity = 1
 affinity_bonus = 0.2
+preferred_zone = 3
+conflicting_zone = 4
 adjacency_targets = { &"shrine": 0.15 }

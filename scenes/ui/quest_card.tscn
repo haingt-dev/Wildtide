@@ -1,0 +1,52 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/quest_card.gd" id="1"]
+
+[node name="QuestCard" type="PanelContainer"]
+custom_minimum_size = Vector2(300, 0)
+script = ExtResource("1")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="FactionLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Faction"
+
+[node name="QuestNameLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Quest Name"
+
+[node name="DescriptionLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Description"
+autowrap_mode = 2
+
+[node name="DurationLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "1 cycle(s)"
+
+[node name="EffectsLabel" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "No effects"
+autowrap_mode = 2
+
+[node name="Buttons" type="HBoxContainer" parent="VBox"]
+layout_mode = 2
+
+[node name="ApproveButton" type="Button" parent="VBox/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Approve"
+
+[node name="RejectButton" type="Button" parent="VBox/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Reject"

@@ -13,6 +13,13 @@ var game_speed: int = 1
 var is_paused: bool = false
 var is_running: bool = false
 var scenario_id: StringName = &"the_wildtide"
+var scenario_data: ScenarioData
+
+## Injected references for win condition checking.
+var artifact_controller: ArtifactController
+var ruins_manager: RuinsManager
+var movement_manager: MovementManager
+var hex_grid: HexGrid
 
 ## Cycle numbers where each era begins. Index 0 = Era 1, etc.
 var era_cycle_thresholds: Array[int] = [1, 6, 11, 16]
@@ -112,6 +119,8 @@ func _start_phase(phase: CycleTimer.Phase) -> void:
 
 func _transition_to_next_phase() -> void:
 	if current_phase == CycleTimer.Phase.EVOLVE:
+		_tick_artifact()
+		_check_win_conditions()
 		EventBus.cycle_completed.emit(cycle_number)
 		cycle_number += 1
 		EventBus.cycle_started.emit(cycle_number)
@@ -119,6 +128,105 @@ func _transition_to_next_phase() -> void:
 	else:
 		var next_phase: int = int(current_phase) + 1
 		_start_phase(next_phase as CycleTimer.Phase)
+
+
+## Check all scenario win conditions at end of EVOLVE phase.
+func _check_win_conditions() -> void:
+	if not scenario_data or scenario_data.win_conditions.is_empty():
+		return
+	for wc: WinConditionData in scenario_data.win_conditions:
+		if _is_condition_met(wc):
+			EventBus.game_won.emit(wc.type)
+			return
+
+
+func _is_condition_met(wc: WinConditionData) -> bool:
+	if get_current_era() < wc.required_era:
+		return false
+	var alignment: float = MetricSystem.get_alignment()
+	match wc.type:
+		WinConditionData.WinConditionType.SCIENCE_WIN:
+			return alignment >= wc.required_alignment and _check_endgame(wc, true)
+		WinConditionData.WinConditionType.MAGIC_WIN:
+			return alignment <= -wc.required_alignment and _check_endgame(wc, false)
+		WinConditionData.WinConditionType.SURVIVAL:
+			return cycle_number >= wc.required_cycles
+	return false
+
+
+## Check fragment count, rift core location, and artifact completion.
+func _check_endgame(wc: WinConditionData, is_science: bool) -> bool:
+	if ruins_manager:
+		var frags: int = (
+			ruins_manager.get_tech_fragments() if is_science else ruins_manager.get_rune_shards()
+		)
+		if frags < wc.required_fragments:
+			return false
+	if wc.requires_rift_core and hex_grid and movement_manager:
+		var cell: HexCell = hex_grid.get_cell(movement_manager.city_center)
+		if not cell or cell.region != RegionType.Type.RIFT_CORE:
+			return false
+	if wc.artifact_construction_cycles > 0:
+		if not artifact_controller or not artifact_controller.is_complete():
+			return false
+	return true
+
+
+## Start artifact construction for the given win type.
+## Validates all prerequisites before starting.
+func start_artifact_construction(win_type: int) -> bool:
+	if artifact_controller and artifact_controller.is_building():
+		return false
+	if not scenario_data:
+		return false
+	var wc: WinConditionData = _find_win_condition(win_type)
+	if not wc or not _validate_artifact_prereqs(wc):
+		return false
+	artifact_controller = ArtifactController.new()
+	var coord: Vector3i = movement_manager.city_center if movement_manager else Vector3i.ZERO
+	artifact_controller.start_construction(coord, wc.artifact_construction_cycles)
+	EventBus.artifact_started.emit(coord)
+	return true
+
+
+func _validate_artifact_prereqs(wc: WinConditionData) -> bool:
+	if get_current_era() < wc.required_era:
+		return false
+	var alignment: float = MetricSystem.get_alignment()
+	var is_science: bool = wc.type == WinConditionData.WinConditionType.SCIENCE_WIN
+	if is_science and alignment < wc.required_alignment:
+		return false
+	if not is_science and alignment > -wc.required_alignment:
+		return false
+	if ruins_manager:
+		var frags: int = (
+			ruins_manager.get_tech_fragments() if is_science else ruins_manager.get_rune_shards()
+		)
+		if frags < wc.required_fragments:
+			return false
+	if wc.requires_rift_core and hex_grid and movement_manager:
+		var cell: HexCell = hex_grid.get_cell(movement_manager.city_center)
+		if not cell or cell.region != RegionType.Type.RIFT_CORE:
+			return false
+	return true
+
+
+func _find_win_condition(win_type: int) -> WinConditionData:
+	for wc: WinConditionData in scenario_data.win_conditions:
+		if wc.type == win_type:
+			return wc
+	return null
+
+
+func _tick_artifact() -> void:
+	if not artifact_controller or not artifact_controller.is_building():
+		return
+	if artifact_controller.tick():
+		EventBus.artifact_completed.emit(-1)
+	else:
+		EventBus.artifact_progress.emit(
+			artifact_controller.progress_cycles, artifact_controller.required_cycles
+		)
 
 
 func _on_phase_timer_timeout() -> void:

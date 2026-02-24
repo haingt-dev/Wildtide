@@ -21,6 +21,8 @@ func after_each() -> void:
 	_disconnect_all(EventBus.wave_started)
 	_disconnect_all(EventBus.wave_ended)
 	_disconnect_all(EventBus.hex_scarred)
+	_disconnect_all(EventBus.wave_intel_updated)
+	_disconnect_all(EventBus.summon_tide_completed)
 
 
 func _disconnect_all(sig: Signal) -> void:
@@ -147,3 +149,147 @@ func test_no_crash_without_rifts() -> void:
 	wm.rift_positions = []
 	wm._run_wave(1)
 	assert_almost_eq(wm.get_last_total_damage(), 0.0, 0.001)
+
+
+# --- Offensive quest effects ---
+
+
+func test_power_multiplier_reduces_damage() -> void:
+	wm._run_wave(1)
+	var damage_normal: float = wm.get_last_total_damage()
+	# Reset grid.
+	grid = HexGrid.new()
+	grid.initialize_hex_map(5)
+	wm.hex_grid = grid
+	# Set up a mock quest_manager with power_multiplier effect.
+	var qmgr := QuestManager.new()
+	add_child(qmgr)
+	var qdata := QuestData.new()
+	qdata.quest_id = &"wall_ambush"
+	qdata.faction_id = &"wall"
+	qdata.duration = 1
+	qdata.is_offensive = true
+	qdata.offensive_effect_key = &"power_multiplier"
+	qdata.offensive_effect_value = 0.8
+	qmgr._offensive_quests[&"wall_ambush"] = ActiveQuest.new(qdata)
+	wm.quest_manager = qmgr
+	wm._run_wave(1)
+	assert_lt(wm.get_last_total_damage(), damage_normal, "Power mult should reduce damage")
+	qmgr.queue_free()
+
+
+func test_defense_bonus_reduces_damage() -> void:
+	wm._run_wave(1)
+	var damage_normal: float = wm.get_last_total_damage()
+	grid = HexGrid.new()
+	grid.initialize_hex_map(5)
+	wm.hex_grid = grid
+	var qmgr := QuestManager.new()
+	add_child(qmgr)
+	var qdata := QuestData.new()
+	qdata.quest_id = &"coin_mercenary"
+	qdata.faction_id = &"coin"
+	qdata.duration = 1
+	qdata.is_offensive = true
+	qdata.offensive_effect_key = &"defense_bonus"
+	qdata.offensive_effect_value = 0.25
+	qmgr._offensive_quests[&"coin_mercenary"] = ActiveQuest.new(qdata)
+	wm.quest_manager = qmgr
+	wm._run_wave(1)
+	assert_lt(wm.get_last_total_damage(), damage_normal, "Defense bonus should reduce damage")
+	qmgr.queue_free()
+
+
+func test_no_offensive_effects_without_quest_manager() -> void:
+	wm.quest_manager = null
+	wm._run_wave(1)
+	assert_gt(wm.get_last_total_damage(), 0.0, "Should still run without quest_manager")
+
+
+func test_full_intel_adds_defense_bonus() -> void:
+	# Run baseline.
+	wm._run_wave(1)
+	var damage_blind: float = wm.get_last_total_damage()
+	# Reset grid.
+	grid = HexGrid.new()
+	grid.initialize_hex_map(5)
+	wm.hex_grid = grid
+	# Set _last_intel_level to FULL.
+	wm._last_intel_level = WaveIntel.Level.FULL
+	wm._run_wave(1)
+	assert_lt(wm.get_last_total_damage(), damage_blind, "Full intel should reduce damage")
+
+
+func test_edict_defense_modifier_reduces_damage() -> void:
+	wm._run_wave(1)
+	var damage_base: float = wm.get_last_total_damage()
+	grid = HexGrid.new()
+	grid.initialize_hex_map(5)
+	wm.hex_grid = grid
+	var em := EdictManager.new()
+	add_child(em)
+	var edata := EdictData.new()
+	edata.edict_id = &"fortify"
+	edata.economy_effects = {&"defense": 0.2}
+	edata.duration = -1
+	em.edict_registry._data[&"fortify"] = edata
+	em.enact_edict(&"fortify")
+	wm.edict_manager = em
+	wm._run_wave(1)
+	assert_lt(wm.get_last_total_damage(), damage_base, "Edict defense should reduce damage")
+	em.queue_free()
+
+
+func test_intel_updated_on_observe_phase() -> void:
+	var received: Array = []
+	EventBus.wave_intel_updated.connect(
+		func(level: int, report: Dictionary) -> void: received.append([level, report])
+	)
+	GameManager.cycle_number = 1
+	wm._on_phase_changed(CycleTimer.Phase.OBSERVE, &"observe")
+	assert_eq(received.size(), 1)
+	assert_eq(received[0][0], 0, "Should be BLIND without wave_intel")
+
+
+# --- Summon the Tide ---
+
+
+func test_summon_the_tide_returns_shards() -> void:
+	GameManager.cycle_number = 1
+	var reward: int = wm.summon_the_tide()
+	assert_gt(reward, 0, "Should return shard reward")
+
+
+func test_summon_the_tide_max_once_per_cycle() -> void:
+	GameManager.cycle_number = 1
+	wm.summon_the_tide()
+	var second: int = wm.summon_the_tide()
+	assert_eq(second, 0, "Should not allow second summon")
+
+
+func test_summon_resets_on_observe() -> void:
+	GameManager.cycle_number = 1
+	wm.summon_the_tide()
+	wm._on_phase_changed(CycleTimer.Phase.OBSERVE, &"observe")
+	var reward: int = wm.summon_the_tide()
+	assert_gt(reward, 0, "Should allow summon after observe reset")
+
+
+func test_summon_costs_resources() -> void:
+	var eco := EconomyManager.new()
+	add_child(eco)
+	wm.economy_manager = eco
+	GameManager.cycle_number = 1
+	var gold_before: int = eco.get_gold()
+	wm.summon_the_tide()
+	assert_lt(eco.get_gold(), gold_before, "Should spend gold")
+	eco.queue_free()
+
+
+func test_summon_emits_signal() -> void:
+	var received := []
+	EventBus.summon_tide_completed.connect(func(r: int) -> void: received.append(r))
+	GameManager.cycle_number = 1
+	wm.summon_the_tide()
+	assert_eq(received.size(), 1)
+	_disconnect_all(EventBus.summon_tide_completed)

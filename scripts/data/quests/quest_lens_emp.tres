@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+quest_id = &"lens_emp"
+faction_id = &"lens"
+display_name = "EMP Array"
+description = "The Lens activates an electromagnetic pulse array to disrupt incoming creatures."
+duration = 1
+metric_effects = { &"pollution": 0.05 }
+alignment_push = 0.1
+is_offensive = true
+offensive_effect_key = &"power_multiplier"
+offensive_effect_value = 0.7
+alignment_requirement = 0.3

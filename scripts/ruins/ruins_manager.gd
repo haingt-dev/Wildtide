@@ -5,12 +5,17 @@ extends Node
 
 var hex_grid: HexGrid
 var ruin_registry: RuinRegistry
+var edict_manager: EdictManager
 
 ## Ruin type assigned to each RUINS biome hex. Key: Vector3i, Value: RuinType.Type.
 var _ruin_types: Dictionary = {}
 
 ## Currently running explorations. Key: Vector3i, Value: ActiveExploration.
 var _active_explorations: Dictionary = {}
+
+## Accumulated fragment counters from completed explorations.
+var _tech_fragments: int = 0
+var _rune_shards: int = 0
 
 var _rng: RandomNumberGenerator
 
@@ -31,6 +36,8 @@ func _ready() -> void:
 func initialize_ruins() -> void:
 	_ruin_types.clear()
 	_active_explorations.clear()
+	_tech_fragments = 0
+	_rune_shards = 0
 	if not hex_grid or not ruin_registry:
 		return
 	var ruins_cells: Array[HexCell] = hex_grid.get_cells_by_biome(BiomeType.Type.RUINS)
@@ -73,6 +80,7 @@ func start_exploration(coord: Vector3i) -> bool:
 		return false
 	cell.exploration_state = RuinType.STATE_EXPLORING
 	var active := ActiveExploration.new(coord, ruin_data)
+	_apply_discovery_bonus(active)
 	_active_explorations[coord] = active
 	EventBus.ruin_exploration_started.emit(coord)
 	return true
@@ -115,6 +123,26 @@ func get_count_by_state(state: int) -> int:
 	return count
 
 
+## Check if any ruin of given type has reached at least the given state.
+func has_ruin_at_state(ruin_type: RuinType.Type, min_state: int) -> bool:
+	for coord: Vector3i in _ruin_types:
+		if _ruin_types[coord] == ruin_type:
+			var cell: HexCell = hex_grid.get_cell(coord)
+			if cell and cell.exploration_state >= min_state:
+				return true
+	return false
+
+
+## Get accumulated tech fragment count.
+func get_tech_fragments() -> int:
+	return _tech_fragments
+
+
+## Get accumulated rune shard count.
+func get_rune_shards() -> int:
+	return _rune_shards
+
+
 func _on_phase_changed(new_phase: int, _phase_name: StringName) -> void:
 	if new_phase == CycleTimer.Phase.EVOLVE:
 		_tick_explorations()
@@ -139,10 +167,13 @@ func _complete_exploration(coord: Vector3i) -> void:
 	if not active:
 		return
 	_active_explorations.erase(coord)
+	_tech_fragments += active.get_effective_tech_fragments()
+	_rune_shards += active.get_effective_rune_shards()
 	var cell: HexCell = hex_grid.get_cell(coord)
 	if cell:
 		cell.exploration_state = RuinType.STATE_DEPLETED
 	EventBus.ruin_depleted.emit(coord)
+	EventBus.fragments_changed.emit(_tech_fragments, _rune_shards)
 
 
 func _check_wave_damage(coord: Vector3i) -> void:
@@ -153,6 +184,16 @@ func _check_wave_damage(coord: Vector3i) -> void:
 	var cell: HexCell = hex_grid.get_cell(coord)
 	if cell:
 		cell.exploration_state = RuinType.STATE_DAMAGED
+
+
+func _apply_discovery_bonus(active: ActiveExploration) -> void:
+	if not edict_manager:
+		return
+	var bonus: float = edict_manager.get_discovery_bonus()
+	if bonus <= 0.0:
+		return
+	var reduction: int = ceili(float(active.remaining_cycles) * bonus)
+	active.remaining_cycles = maxi(active.remaining_cycles - reduction, 1)
 
 
 func _push_discovery_metrics() -> void:

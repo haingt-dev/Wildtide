@@ -3,10 +3,13 @@ extends RefCounted
 ## Runtime state for a single building under construction or completed.
 ## Created when placement starts; kept after completion for effect application.
 
+const MAX_TIER: int = 3
+
 var coord: Vector3i
 var building_data: BuildingData
 var progress: float = 0.0  ## Accumulated toward construction_duration
 var is_complete: bool = false
+var current_tier: int = 1
 
 
 func _init(build_coord: Vector3i, data: BuildingData) -> void:
@@ -32,6 +35,14 @@ func get_progress_ratio() -> float:
 	if building_data.construction_duration <= 0:
 		return 1.0
 	return clampf(progress / float(building_data.construction_duration), 0.0, 1.0)
+
+
+## Advance building tier by 1. Returns true if tier increased.
+func advance_tier() -> bool:
+	if current_tier >= MAX_TIER:
+		return false
+	current_tier += 1
+	return true
 
 
 ## Estimate remaining cycles at the given speed.

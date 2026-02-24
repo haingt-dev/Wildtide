@@ -3,7 +3,7 @@ extends RefCounted
 ## Pure data conversion between game systems and JSON-compatible Dictionaries.
 ## No file I/O — used by SaveSystem for the actual read/write.
 
-const SAVE_VERSION: int = 1
+const SAVE_VERSION: int = 3
 
 
 static func vec3i_to_array(v: Vector3i) -> Array:
@@ -60,6 +60,7 @@ static func serialize_world(
 					"region": cell.region,
 					"rift_density": cell.rift_density,
 					"pollution_level": cell.pollution_level,
+					"zone_type": cell.zone_type,
 				}
 			)
 		)
@@ -98,6 +99,7 @@ static func serialize_world(
 					"building_id": String(active.building_data.building_id),
 					"progress": active.progress,
 					"is_complete": active.is_complete,
+					"current_tier": active.current_tier,
 				}
 			)
 		)
@@ -109,6 +111,10 @@ static func serialize_world(
 		"ruin_types": ruin_dict,
 		"active_explorations": explorations,
 		"constructions": constructions,
+		"last_intel_level": wave_mgr._last_intel_level,
+		"last_intel_report": wave_mgr._last_intel_report,
+		"tech_fragments": ruins_mgr._tech_fragments,
+		"rune_shards": ruins_mgr._rune_shards,
 	}
 
 
@@ -145,6 +151,11 @@ static func serialize_factions(quest_mgr: QuestManager) -> Dictionary:
 	for faction_id: StringName in quest_mgr._last_proposed:
 		last[String(faction_id)] = String(quest_mgr._last_proposed[faction_id])
 
+	var offensive: Array = []
+	for quest_id: StringName in quest_mgr._offensive_quests:
+		var aq: ActiveQuest = quest_mgr._offensive_quests[quest_id]
+		offensive.append({"quest_id": String(quest_id), "remaining_cycles": aq.remaining_cycles})
+
 	var morale: Dictionary = {}
 	for faction_id: StringName in quest_mgr._faction_morale:
 		morale[String(faction_id)] = quest_mgr._faction_morale[faction_id]
@@ -152,6 +163,7 @@ static func serialize_factions(quest_mgr: QuestManager) -> Dictionary:
 	return {
 		"pending_proposals": pending,
 		"active_quests": active,
+		"offensive_quests": offensive,
 		"last_proposed": last,
 		"faction_morale": morale,
 	}
@@ -163,6 +175,7 @@ static func serialize_economy(economy_mgr: EconomyManager) -> Dictionary:
 		"mana": economy_mgr.get_mana(),
 		"gold_capacity": economy_mgr.get_gold_capacity(),
 		"mana_capacity": economy_mgr.get_mana_capacity(),
+		"rift_shards": economy_mgr.get_rift_shards(),
 	}
 
 
@@ -178,6 +191,10 @@ static func serialize_movement(move_mgr: MovementManager) -> Dictionary:
 		"city_center": vec3i_to_array(move_mgr.city_center),
 		"is_in_transit": move_mgr.is_in_transit,
 		"transit_cycles_remaining": move_mgr.transit_cycles_remaining,
+		"settlement_cycles_remaining": move_mgr._settlement_cycles_remaining,
+		"cycles_in_region": move_mgr._cycles_in_region,
+		"last_salvage_yield": move_mgr._last_salvage_yield,
+		"awaiting_direction": move_mgr.awaiting_direction,
 	}
 
 
@@ -194,7 +211,10 @@ static func serialize_edicts(edict_mgr: EdictManager) -> Dictionary:
 				}
 			)
 		)
-	return {"active_edicts": edicts}
+	return {
+		"active_edicts": edicts,
+		"mandate_last_era": edict_mgr._mandate_last_era,
+	}
 
 
 # --- Deserialize ---
@@ -237,6 +257,7 @@ static func deserialize_world(
 		cell.region = int(cell_dict.get("region", RegionType.Type.STARTING))
 		cell.rift_density = float(cell_dict.get("rift_density", 0.0))
 		cell.pollution_level = float(cell_dict.get("pollution_level", 0.0))
+		cell.zone_type = int(cell_dict.get("zone_type", ZoneType.Type.NONE))
 		grid._cell_array.append(cell)
 	grid.rebuild_lookup()
 
@@ -245,6 +266,10 @@ static func deserialize_world(
 	var rift_data: Array = data.get("rift_positions", [])
 	for pos_arr: Array in rift_data:
 		wave_mgr.rift_positions.append(array_to_vec3i(pos_arr))
+
+	# WaveManager intel cache
+	wave_mgr._last_intel_level = int(data.get("last_intel_level", 0))
+	wave_mgr._last_intel_report = data.get("last_intel_report", {}) as Dictionary
 
 	# RuinsManager ruin types
 	ruins_mgr._ruin_types.clear()
@@ -265,6 +290,10 @@ static func deserialize_world(
 			active.is_damaged = bool(exp_dict.get("is_damaged", false))
 			ruins_mgr._active_explorations[coord] = active
 
+	# Fragment counters
+	ruins_mgr._tech_fragments = int(data.get("tech_fragments", 0))
+	ruins_mgr._rune_shards = int(data.get("rune_shards", 0))
+
 	# BuildingManager constructions
 	building_mgr._constructions.clear()
 	var constructions_data: Array = data.get("constructions", [])
@@ -276,6 +305,7 @@ static func deserialize_world(
 			var active := ActiveConstruction.new(coord, bdata)
 			active.progress = float(con_dict["progress"])
 			active.is_complete = bool(con_dict.get("is_complete", false))
+			active.current_tier = int(con_dict.get("current_tier", 1))
 			building_mgr._constructions[coord] = active
 
 	return true
@@ -317,6 +347,17 @@ static func deserialize_factions(data: Dictionary, quest_mgr: QuestManager) -> b
 			active.remaining_cycles = int(aq_dict["remaining_cycles"])
 			quest_mgr._active_quests[quest_id] = active
 
+	# Offensive quests
+	quest_mgr._offensive_quests.clear()
+	var offensive_data: Array = data.get("offensive_quests", [])
+	for oq_dict: Dictionary in offensive_data:
+		var oq_id: StringName = StringName(oq_dict["quest_id"])
+		var oq_data: QuestData = quest_mgr.quest_registry.get_quest(oq_id)
+		if oq_data:
+			var oq_active := ActiveQuest.new(oq_data)
+			oq_active.remaining_cycles = int(oq_dict["remaining_cycles"])
+			quest_mgr._offensive_quests[oq_id] = oq_active
+
 	# Last proposed per faction
 	quest_mgr._last_proposed.clear()
 	var last_data: Dictionary = data.get("last_proposed", {})
@@ -339,6 +380,7 @@ static func deserialize_economy(data: Dictionary, economy_mgr: EconomyManager) -
 	economy_mgr._mana = int(data.get("mana", 0))
 	economy_mgr._gold_capacity = int(data.get("gold_capacity", 100))
 	economy_mgr._mana_capacity = int(data.get("mana_capacity", 100))
+	economy_mgr._rift_shards = int(data.get("rift_shards", 0))
 	return true
 
 
@@ -354,9 +396,36 @@ static func deserialize_movement(data: Dictionary, move_mgr: MovementManager) ->
 	move_mgr.city_center = array_to_vec3i(data.get("city_center", [0, 0, 0]))
 	move_mgr.is_in_transit = bool(data.get("is_in_transit", false))
 	move_mgr.transit_cycles_remaining = int(data.get("transit_cycles_remaining", 0))
+	move_mgr._settlement_cycles_remaining = int(data.get("settlement_cycles_remaining", 0))
+	move_mgr._cycles_in_region = int(data.get("cycles_in_region", 0))
+	move_mgr._last_salvage_yield = int(data.get("last_salvage_yield", 0))
+	move_mgr.awaiting_direction = bool(data.get("awaiting_direction", false))
 	if move_mgr.is_in_transit and move_mgr.economy_manager:
 		move_mgr.economy_manager.set_transit(true)
 	return true
+
+
+static func serialize_artifact(controller: ArtifactController) -> Dictionary:
+	if not controller:
+		return {}
+	return {
+		"state": controller.state,
+		"progress_cycles": controller.progress_cycles,
+		"required_cycles": controller.required_cycles,
+		"construction_coord": vec3i_to_array(controller.construction_coord),
+	}
+
+
+static func deserialize_artifact(data: Dictionary) -> ArtifactController:
+	if data.is_empty():
+		return null
+	var controller := ArtifactController.new()
+	controller.state = int(data.get("state", 0)) as ArtifactController.State
+	controller.progress_cycles = int(data.get("progress_cycles", 0))
+	controller.required_cycles = int(data.get("required_cycles", 3))
+	var coord_arr: Array = data.get("construction_coord", [0, 0, 0])
+	controller.construction_coord = array_to_vec3i(coord_arr)
+	return controller
 
 
 static func deserialize_edicts(data: Dictionary, edict_mgr: EdictManager) -> bool:
@@ -369,4 +438,5 @@ static func deserialize_edicts(data: Dictionary, edict_mgr: EdictManager) -> boo
 				"data": edata,
 				"remaining": int(entry["remaining"]),
 			}
+	edict_mgr._mandate_last_era = int(data.get("mandate_last_era", 0))
 	return true

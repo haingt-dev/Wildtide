@@ -15,4 +15,6 @@ metric_effects = { &"pollution": 0.04, &"anxiety": 0.02 }
 alignment_push = 0.15
 biome_affinity = 2
 affinity_bonus = 0.2
+preferred_zone = 3
+conflicting_zone = 2
 adjacency_targets = { &"workshop": 0.2 }

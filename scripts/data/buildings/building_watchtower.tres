@@ -15,4 +15,6 @@ metric_effects = { &"anxiety": -0.03, &"solidarity": 0.01 }
 alignment_push = 0.0
 biome_affinity = 2
 affinity_bonus = 0.2
+preferred_zone = 4
+conflicting_zone = 1
 adjacency_targets = { &"watchtower": 0.15 }

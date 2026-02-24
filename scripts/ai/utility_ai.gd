@@ -1,31 +1,70 @@
 class_name UtilityAI
 extends Node
 ## Scoring-based AI that autonomously places buildings each cycle.
-## Evaluates every (hex, building_type) pair using a 5-factor utility formula,
+## Evaluates every (hex, building_type) pair using a 6-factor utility formula,
 ## then places the top N candidates via BuildingManager.
 ## Add as a child node in the main game scene (NOT an autoload).
 
 ## Era → allowed building IDs (GDD WT - Utility AI).
 const ERA_BUILDINGS: Array[Array] = [
 	[&"homestead", &"watchtower"],
-	[&"homestead", &"watchtower", &"reactor", &"shrine", &"market"],
-	[&"homestead", &"watchtower", &"reactor", &"shrine", &"market", &"workshop"],
+	[
+		&"homestead",
+		&"watchtower",
+		&"reactor",
+		&"shrine",
+		&"market",
+		&"tesla_coil",
+		&"rift_ward",
+	],
+	[
+		&"homestead",
+		&"watchtower",
+		&"reactor",
+		&"shrine",
+		&"market",
+		&"workshop",
+		&"tesla_coil",
+		&"rift_ward",
+		&"siege_ballista",
+		&"entropy_spire",
+	],
 ]
 
 ## Faction → preferred building IDs for faction_influence scoring.
 const FACTION_BUILDINGS: Dictionary = {
-	&"the_lens": [&"reactor", &"workshop"],
-	&"the_veil": [&"shrine"],
+	&"the_lens": [&"reactor", &"workshop", &"tesla_coil", &"siege_ballista"],
+	&"the_veil": [&"shrine", &"rift_ward", &"entropy_spire"],
 	&"the_coin": [&"market", &"homestead"],
-	&"the_wall": [&"watchtower"],
+	&"the_wall": [&"watchtower", &"tesla_coil", &"rift_ward", &"siege_ballista", &"entropy_spire"],
 }
 
 ## Alignment-favored building IDs.
-const SCIENCE_BUILDINGS: Array[StringName] = [&"reactor", &"workshop"]
-const MAGIC_BUILDINGS: Array[StringName] = [&"shrine"]
+const SCIENCE_BUILDINGS: Array[StringName] = [
+	&"reactor", &"workshop", &"tesla_coil", &"siege_ballista"
+]
+const MAGIC_BUILDINGS: Array[StringName] = [&"shrine", &"rift_ward", &"entropy_spire"]
+
+## Weapon and defense building groups.
+const WEAPON_BUILDINGS: Array[StringName] = [
+	&"tesla_coil",
+	&"rift_ward",
+	&"siege_ballista",
+	&"entropy_spire",
+]
+const DEFENSE_BUILDINGS: Array[StringName] = [
+	&"watchtower",
+	&"tesla_coil",
+	&"rift_ward",
+	&"siege_ballista",
+	&"entropy_spire",
+]
 
 const ALIGNMENT_BOOST: float = 0.15
 const DISTANCE_WEIGHT: float = 0.3
+const THREAT_DIRECTION_BONUS: float = 0.3
+const ZONE_FILL_CAP: float = 0.7
+const SCAR_AVOIDANCE_THRESHOLD: float = 0.8
 
 var ai_config: UtilityAIConfig
 var hex_grid: HexGrid
@@ -53,6 +92,9 @@ func evaluate_and_place() -> Array[Dictionary]:
 	var era: int = GameManager.get_current_era()
 	var rate_idx: int = mini(era - 1, ai_config.era_placement_rates.size() - 1)
 	var placement_count: int = ai_config.era_placement_rates[rate_idx]
+	if movement_manager:
+		var settle_mult: float = movement_manager.get_settlement_build_multiplier()
+		placement_count = roundi(float(placement_count) * settle_mult)
 	var allowed_ids: Array = _get_era_buildings(era)
 	var candidates: Array[Vector3i] = _collect_candidates()
 
@@ -93,13 +135,19 @@ func _get_era_buildings(era: int) -> Array:
 
 
 ## Collect buildable hex coordinates, sorted by distance to city center.
+## Filters out heavy scars and over-filled zones (negative space rules).
 func _collect_candidates() -> Array[Vector3i]:
 	var center: Vector3i = _get_city_center()
+	var zone_counts: Dictionary = _count_zone_fill()
 	var result: Array[Vector3i] = []
 	for cell: HexCell in hex_grid.get_all_cells():
 		if not cell.is_buildable():
 			continue
 		if cell.fog_state != FogState.ACTIVE:
+			continue
+		if cell.scar_state >= SCAR_AVOIDANCE_THRESHOLD:
+			continue
+		if not _zone_has_capacity(cell.zone_type, zone_counts):
 			continue
 		result.append(cell.coord)
 	result.sort_custom(
@@ -111,22 +159,52 @@ func _collect_candidates() -> Array[Vector3i]:
 	return result
 
 
-## Score a single (hex, building) pair using the 5-factor GDD formula.
+## Count built vs total hexes per zone type for fill cap checks.
+func _count_zone_fill() -> Dictionary:
+	var total: Dictionary = {}
+	var built: Dictionary = {}
+	for cell: HexCell in hex_grid.get_all_cells():
+		if cell.fog_state != FogState.ACTIVE or cell.zone_type == ZoneType.Type.NONE:
+			continue
+		total[cell.zone_type] = total.get(cell.zone_type, 0) + 1
+		if not cell.is_buildable():
+			built[cell.zone_type] = built.get(cell.zone_type, 0) + 1
+	return {&"total": total, &"built": built}
+
+
+## Check if a zone is below the 70% fill cap.
+func _zone_has_capacity(zone: int, counts: Dictionary) -> bool:
+	if zone == ZoneType.Type.NONE:
+		return true
+	var total: int = counts[&"total"].get(zone, 0)
+	if total == 0:
+		return true
+	var built_count: int = counts[&"built"].get(zone, 0)
+	return float(built_count) / float(total) < ZONE_FILL_CAP
+
+
+## Score a single (hex, building) pair using the 6-factor GDD formula.
 func _score_placement(coord: Vector3i, cell: HexCell, bdata: BuildingData) -> float:
 	var need: float = _calc_metric_need(bdata)
 	var affinity: float = _calc_biome_affinity(cell, bdata)
 	var adjacency: float = _calc_adjacency(coord, bdata)
 	var faction: float = _calc_faction_influence(bdata)
+	var zone: float = _calc_zone_affinity(cell, bdata)
 	var penalty: float = _calc_pollution_penalty(cell)
 	var score: float = (
 		need * ai_config.need_weight
 		+ affinity * ai_config.affinity_weight
 		+ adjacency * ai_config.adjacency_weight
 		+ faction * ai_config.faction_weight
+		+ zone * ai_config.zone_weight
 		+ penalty * ai_config.penalty_weight
 	)
 	score += _calc_alignment_boost(bdata)
 	score += _calc_distance_bonus(coord)
+	score += _calc_cluster_penalty(coord, bdata)
+	score += _calc_threat_bonus(cell, bdata)
+	score += _calc_weapon_diversity_penalty(bdata)
+	score += _calc_defense_need_bonus(bdata)
 	return score
 
 
@@ -199,6 +277,77 @@ func _calc_pollution_penalty(cell: HexCell) -> float:
 		/ (ai_config.pollution_high_threshold - ai_config.pollution_low_threshold)
 	)
 	return lerpf(0.0, ai_config.pollution_mid_penalty, t)
+
+
+## Factor 6: Zone affinity — preferred/conflicting zone match.
+func _calc_zone_affinity(cell: HexCell, bdata: BuildingData) -> float:
+	if cell.zone_type == ZoneType.Type.NONE:
+		return 0.0
+	if bdata.preferred_zone == cell.zone_type:
+		return 0.3
+	if bdata.conflicting_zone == cell.zone_type:
+		return -0.2
+	return 0.0
+
+
+## Cluster penalty — penalize placing 3+ adjacent same building type.
+func _calc_cluster_penalty(coord: Vector3i, bdata: BuildingData) -> float:
+	if not hex_grid:
+		return 0.0
+	var same_count: int = 0
+	for neighbor: HexCell in hex_grid.get_neighbors_of(coord):
+		if neighbor.building_id == bdata.building_id:
+			same_count += 1
+	if same_count >= ai_config.cluster_threshold:
+		return ai_config.cluster_penalty
+	return 0.0
+
+
+## Threat direction bonus — weapon buildings score higher near Rifts.
+func _calc_threat_bonus(cell: HexCell, bdata: BuildingData) -> float:
+	if bdata.building_id not in WEAPON_BUILDINGS:
+		return 0.0
+	return cell.rift_density * THREAT_DIRECTION_BONUS
+
+
+## Weapon diversity penalty — no more than N of the same weapon in Defense Perimeter.
+func _calc_weapon_diversity_penalty(bdata: BuildingData) -> float:
+	if bdata.building_id not in WEAPON_BUILDINGS:
+		return 0.0
+	var same_count: int = 0
+	for cell: HexCell in hex_grid.get_all_cells():
+		if (
+			cell.building_id == bdata.building_id
+			and cell.zone_type == ZoneType.Type.DEFENSE_PERIMETER
+		):
+			same_count += 1
+	if same_count >= ai_config.weapon_diversity_max:
+		return ai_config.weapon_diversity_penalty
+	return 0.0
+
+
+## Defense need bonus — boost defense/weapon buildings when defense ratio is low.
+func _calc_defense_need_bonus(bdata: BuildingData) -> float:
+	if bdata.building_id not in DEFENSE_BUILDINGS:
+		return 0.0
+	var score: float = _calc_defense_score()
+	if score < ai_config.defense_critical_low:
+		return (ai_config.defense_critical_low - score) / ai_config.defense_critical_low * 0.3
+	return 0.0
+
+
+## Defense score — ratio of defense buildings to total active hexes.
+func _calc_defense_score() -> float:
+	var defense_count: int = 0
+	var total_active: int = 0
+	for cell: HexCell in hex_grid.get_all_cells():
+		if cell.fog_state == FogState.ACTIVE:
+			total_active += 1
+			if cell.building_id in DEFENSE_BUILDINGS:
+				defense_count += 1
+	if total_active == 0:
+		return 1.0
+	return float(defense_count) / float(total_active)
 
 
 ## Alignment boost — Science/Magic axis favors certain building types.

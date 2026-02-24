@@ -28,6 +28,7 @@ func after_each() -> void:
 	_disconnect_all(EventBus.ruin_discovered)
 	_disconnect_all(EventBus.ruin_exploration_started)
 	_disconnect_all(EventBus.ruin_depleted)
+	_disconnect_all(EventBus.fragments_changed)
 	_disconnect_all(EventBus.hex_scarred)
 
 
@@ -234,3 +235,169 @@ func test_get_count_by_state() -> void:
 	manager.discover_ruin(_ruins_coords[0])
 	assert_eq(manager.get_count_by_state(RuinType.STATE_UNDISCOVERED), 2)
 	assert_eq(manager.get_count_by_state(RuinType.STATE_DISCOVERED), 1)
+
+
+# --- has_ruin_at_state ---
+
+
+func test_has_ruin_at_state_true() -> void:
+	manager.initialize_ruins_seeded(42)
+	manager.discover_ruin(_ruins_coords[0])
+	var ruin_type: Variant = manager.get_ruin_type(_ruins_coords[0])
+	assert_true(manager.has_ruin_at_state(ruin_type as RuinType.Type, RuinType.STATE_DISCOVERED))
+
+
+func test_has_ruin_at_state_false() -> void:
+	manager.initialize_ruins_seeded(42)
+	# No ruins discovered yet — all at UNDISCOVERED.
+	var ruin_type: Variant = manager.get_ruin_type(_ruins_coords[0])
+	assert_false(manager.has_ruin_at_state(ruin_type as RuinType.Type, RuinType.STATE_DISCOVERED))
+
+
+# --- Fragment accumulation ---
+
+
+func test_initial_fragment_counters_are_zero() -> void:
+	manager.initialize_ruins_seeded(42)
+	assert_eq(manager.get_tech_fragments(), 0)
+	assert_eq(manager.get_rune_shards(), 0)
+
+
+func test_completed_exploration_yields_fragments() -> void:
+	manager.initialize_ruins_seeded(42)
+	var coord: Vector3i = _ruins_coords[0]
+	manager.discover_ruin(coord)
+	manager.start_exploration(coord)
+	var data: RuinData = manager.get_ruin_data(coord)
+	for i: int in range(data.exploration_duration):
+		manager._on_phase_changed(CycleTimer.Phase.EVOLVE, &"evolve")
+	var total: int = manager.get_tech_fragments() + manager.get_rune_shards()
+	assert_gt(total, 0, "Should yield at least some fragments")
+
+
+func test_fragment_counters_accumulate() -> void:
+	manager.initialize_ruins_seeded(42)
+	# Complete first ruin.
+	var c0: Vector3i = _ruins_coords[0]
+	manager.discover_ruin(c0)
+	manager.start_exploration(c0)
+	var d0: RuinData = manager.get_ruin_data(c0)
+	for i: int in range(d0.exploration_duration):
+		manager._on_phase_changed(CycleTimer.Phase.EVOLVE, &"evolve")
+	var tech_after_first: int = manager.get_tech_fragments()
+	var rune_after_first: int = manager.get_rune_shards()
+	# Complete second ruin.
+	var c1: Vector3i = _ruins_coords[1]
+	manager.discover_ruin(c1)
+	manager.start_exploration(c1)
+	var d1: RuinData = manager.get_ruin_data(c1)
+	for i: int in range(d1.exploration_duration):
+		manager._on_phase_changed(CycleTimer.Phase.EVOLVE, &"evolve")
+	var tech_total: int = manager.get_tech_fragments()
+	var rune_total: int = manager.get_rune_shards()
+	assert_true(
+		tech_total >= tech_after_first and rune_total >= rune_after_first,
+		"Counters should accumulate"
+	)
+
+
+func test_damaged_exploration_reduces_yield() -> void:
+	manager.initialize_ruins_seeded(42)
+	var coord: Vector3i = _ruins_coords[0]
+	manager.discover_ruin(coord)
+	manager.start_exploration(coord)
+	var data: RuinData = manager.get_ruin_data(coord)
+	# Damage the exploration mid-way.
+	EventBus.hex_scarred.emit(coord, 0.2)
+	for i: int in range(data.exploration_duration):
+		manager._on_phase_changed(CycleTimer.Phase.EVOLVE, &"evolve")
+	var total: int = manager.get_tech_fragments() + manager.get_rune_shards()
+	var undamaged_total: int = data.tech_fragments + data.rune_shards
+	# Damaged yield should be <= undamaged full yield.
+	assert_true(total <= undamaged_total, "Damaged yield should be reduced")
+
+
+func test_fragments_changed_signal_emitted() -> void:
+	manager.initialize_ruins_seeded(42)
+	var received := []
+	EventBus.fragments_changed.connect(func(t: int, r: int) -> void: received.append([t, r]))
+	var coord: Vector3i = _ruins_coords[0]
+	manager.discover_ruin(coord)
+	manager.start_exploration(coord)
+	var data: RuinData = manager.get_ruin_data(coord)
+	for i: int in range(data.exploration_duration):
+		manager._on_phase_changed(CycleTimer.Phase.EVOLVE, &"evolve")
+	assert_eq(received.size(), 1, "Should emit fragments_changed on completion")
+
+
+func test_initialize_resets_fragment_counters() -> void:
+	manager.initialize_ruins_seeded(42)
+	var coord: Vector3i = _ruins_coords[0]
+	manager.discover_ruin(coord)
+	manager.start_exploration(coord)
+	var data: RuinData = manager.get_ruin_data(coord)
+	for i: int in range(data.exploration_duration):
+		manager._on_phase_changed(CycleTimer.Phase.EVOLVE, &"evolve")
+	assert_gt(manager.get_tech_fragments() + manager.get_rune_shards(), 0)
+	# Re-initialize should reset counters.
+	manager.initialize_ruins_seeded(42)
+	assert_eq(manager.get_tech_fragments(), 0)
+	assert_eq(manager.get_rune_shards(), 0)
+
+
+# --- Discovery bonus ---
+
+
+func test_discovery_bonus_reduces_exploration_cycles() -> void:
+	manager.initialize_ruins_seeded(42)
+	var coord: Vector3i = _ruins_coords[0]
+	manager.discover_ruin(coord)
+	# Set up an edict manager with discovery bonus.
+	var em := EdictManager.new()
+	add_child(em)
+	var edata := EdictData.new()
+	edata.edict_id = &"research_grant"
+	edata.discovery_bonus = 0.5
+	edata.duration = -1
+	em.edict_registry._data[&"research_grant"] = edata
+	em.enact_edict(&"research_grant")
+	manager.edict_manager = em
+	manager.start_exploration(coord)
+	var explorations := manager.get_active_explorations()
+	var data: RuinData = manager.get_ruin_data(coord)
+	assert_lt(
+		explorations[0].remaining_cycles,
+		data.exploration_duration,
+		"Discovery bonus should reduce cycles"
+	)
+	em.queue_free()
+
+
+func test_discovery_bonus_minimum_one_cycle() -> void:
+	manager.initialize_ruins_seeded(42)
+	var coord: Vector3i = _ruins_coords[0]
+	manager.discover_ruin(coord)
+	var em := EdictManager.new()
+	add_child(em)
+	var edata := EdictData.new()
+	edata.edict_id = &"mega_research"
+	edata.discovery_bonus = 0.99
+	edata.duration = -1
+	em.edict_registry._data[&"mega_research"] = edata
+	em.enact_edict(&"mega_research")
+	manager.edict_manager = em
+	manager.start_exploration(coord)
+	var explorations := manager.get_active_explorations()
+	assert_gte(explorations[0].remaining_cycles, 1, "Should never go below 1 cycle")
+	em.queue_free()
+
+
+func test_no_discovery_bonus_without_edict_manager() -> void:
+	manager.initialize_ruins_seeded(42)
+	var coord: Vector3i = _ruins_coords[0]
+	manager.discover_ruin(coord)
+	manager.edict_manager = null
+	manager.start_exploration(coord)
+	var explorations := manager.get_active_explorations()
+	var data: RuinData = manager.get_ruin_data(coord)
+	assert_eq(explorations[0].remaining_cycles, data.exploration_duration)

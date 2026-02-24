@@ -28,10 +28,12 @@ signal hex_deselected
 signal wave_started(wave_number: int)
 signal wave_ended(wave_number: int)
 signal hex_scarred(coord: Vector3i, amount: float)
+signal wave_intel_updated(level: int, report: Dictionary)
 
 # --- Buildings ---
 signal building_placed(coord: Vector3i, building_id: StringName)
 signal building_removed(coord: Vector3i, building_id: StringName)
+signal building_tier_changed(coord: Vector3i, new_tier: int)
 
 # --- AI ---
 signal ai_buildings_placed(placements: Array)
@@ -58,14 +60,25 @@ signal edict_expired(edict_id: StringName)
 signal stability_changed(new_value: int, old_value: int)
 signal alert_level_changed(new_level: StringName)
 signal game_over
+signal game_won(win_type: int)
 
 # --- Movement ---
 signal movement_proposed(direction: Vector3i)
 signal city_moved(old_center: Vector3i, new_center: Vector3i)
 signal transit_started
 signal transit_ended
+signal migration_requested
+signal rift_shards_changed(new_amount: int, old_amount: int)
+signal summon_tide_completed(shard_reward: int)
 
 # --- Ruins ---
 signal ruin_discovered(coord: Vector3i, ruin_type: StringName)
 signal ruin_exploration_started(coord: Vector3i)
 signal ruin_depleted(coord: Vector3i)
+
+# --- Fragments & Artifact ---
+signal fragments_changed(tech: int, rune: int)
+signal artifact_started(coord: Vector3i)
+signal artifact_progress(progress: int, required: int)
+signal artifact_completed(win_type: int)
+signal artifact_failed

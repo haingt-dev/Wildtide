@@ -115,3 +115,69 @@ func test_edict_enacted_signal() -> void:
 	_manager.enact_edict(&"sig_test")
 	assert_eq(received.size(), 1)
 	assert_eq(received[0], &"sig_test")
+
+
+# --- Edict → QuestManager morale integration ---
+
+
+func test_enact_pushes_positive_morale_to_quest_manager() -> void:
+	var qmgr := QuestManager.new()
+	add_child(qmgr)
+	_manager.quest_manager = qmgr
+	_inject_edict(_make_edict(&"popular", -1, false, {}, {}, {&"the_lens": 10}))
+	var old_morale: int = qmgr.get_faction_morale(&"the_lens")
+	_manager.enact_edict(&"popular")
+	assert_eq(qmgr.get_faction_morale(&"the_lens"), old_morale + 10)
+	qmgr.queue_free()
+
+
+func test_dislike_pushes_negative_morale_per_cycle() -> void:
+	var qmgr := QuestManager.new()
+	add_child(qmgr)
+	_manager.quest_manager = qmgr
+	_inject_edict(_make_edict(&"unpop", -1, false, {}, {}, {&"the_coin": -5}))
+	_manager.enact_edict(&"unpop")
+	var before: int = qmgr.get_faction_morale(&"the_coin")
+	_manager._apply_faction_dislike()
+	assert_eq(qmgr.get_faction_morale(&"the_coin"), before - 5)
+	qmgr.queue_free()
+
+
+func test_faction_reactions_skip_without_quest_manager() -> void:
+	_inject_edict(_make_edict(&"noop", -1, false, {}, {}, {&"the_wall": 10}))
+	_manager.enact_edict(&"noop")
+	# Should not crash — no quest_manager set
+	assert_true(true, "No crash without quest_manager")
+
+
+# --- Aggregation methods ---
+
+
+func test_get_defense_modifier_empty() -> void:
+	assert_almost_eq(_manager.get_defense_modifier(), 0.0, 0.001)
+
+
+func test_get_defense_modifier_single() -> void:
+	_inject_edict(_make_edict(&"fort", -1, false, {}, {&"defense": 0.15}))
+	_manager.enact_edict(&"fort")
+	assert_almost_eq(_manager.get_defense_modifier(), 0.15, 0.001)
+
+
+func test_get_defense_modifier_stacks() -> void:
+	_inject_edict(_make_edict(&"fort", -1, false, {}, {&"defense": 0.15}))
+	_inject_edict(_make_edict(&"wall", -1, false, {}, {&"defense": 0.10}))
+	_manager.enact_edict(&"fort")
+	_manager.enact_edict(&"wall")
+	assert_almost_eq(_manager.get_defense_modifier(), 0.25, 0.001)
+
+
+func test_get_discovery_bonus_empty() -> void:
+	assert_almost_eq(_manager.get_discovery_bonus(), 0.0, 0.001)
+
+
+func test_get_discovery_bonus_from_edict() -> void:
+	var e := _make_edict(&"research")
+	e.discovery_bonus = 0.2
+	_inject_edict(e)
+	_manager.enact_edict(&"research")
+	assert_almost_eq(_manager.get_discovery_bonus(), 0.2, 0.001)

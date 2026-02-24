@@ -370,3 +370,91 @@ func test_skips_hidden_hexes() -> void:
 	GameManager.cycle_number = 1
 	var result: Array[Dictionary] = ai.evaluate_and_place()
 	assert_eq(result.size(), 0, "Should not place on hidden hexes")
+
+
+# --- Zone affinity ---
+
+
+func test_preferred_zone_boosts_score() -> void:
+	var coord := Vector3i(1, -1, 0)
+	var cell: HexCell = grid.get_cell(coord)
+	cell.zone_type = ZoneType.Type.RESIDENTIAL
+	var bdata: BuildingData = ai.building_registry.get_data(&"homestead")
+	var zone: float = ai._calc_zone_affinity(cell, bdata)
+	assert_almost_eq(zone, 0.3, 0.001, "Homestead in Residential = +0.3")
+
+
+func test_conflicting_zone_penalizes_score() -> void:
+	var coord := Vector3i(1, -1, 0)
+	var cell: HexCell = grid.get_cell(coord)
+	cell.zone_type = ZoneType.Type.DEFENSE_PERIMETER
+	var bdata: BuildingData = ai.building_registry.get_data(&"homestead")
+	var zone: float = ai._calc_zone_affinity(cell, bdata)
+	assert_almost_eq(zone, -0.2, 0.001, "Homestead in Defense Perimeter = -0.2")
+
+
+func test_no_zone_no_effect() -> void:
+	var bdata := BuildingData.new()
+	bdata.preferred_zone = ZoneType.Type.NONE
+	bdata.conflicting_zone = ZoneType.Type.NONE
+	var cell := HexCell.new()
+	cell.zone_type = ZoneType.Type.CORE
+	var zone: float = ai._calc_zone_affinity(cell, bdata)
+	assert_almost_eq(zone, 0.0, 0.001, "No preference = no effect")
+
+
+func test_none_zone_hex_neutral() -> void:
+	var cell := HexCell.new()
+	cell.zone_type = ZoneType.Type.NONE
+	var bdata: BuildingData = ai.building_registry.get_data(&"homestead")
+	var zone: float = ai._calc_zone_affinity(cell, bdata)
+	assert_almost_eq(zone, 0.0, 0.001, "NONE zone hex = neutral")
+
+
+func test_zone_affinity_integrated_in_score() -> void:
+	var coord_preferred := Vector3i(1, -1, 0)
+	var coord_neutral := Vector3i(-1, 1, 0)
+	grid.get_cell(coord_preferred).zone_type = ZoneType.Type.RESIDENTIAL
+	var bdata: BuildingData = ai.building_registry.get_data(&"homestead")
+	var score_preferred: float = ai._score_placement(
+		coord_preferred, grid.get_cell(coord_preferred), bdata
+	)
+	var score_neutral: float = ai._score_placement(
+		coord_neutral, grid.get_cell(coord_neutral), bdata
+	)
+	assert_gt(score_preferred, score_neutral, "Preferred zone should boost total score")
+
+
+# --- Cluster penalty ---
+
+
+func test_cluster_penalty_with_3_same_neighbors() -> void:
+	var center := Vector3i.ZERO
+	var neighbors: Array[Vector3i] = HexMath.neighbors(center)
+	for i: int in range(3):
+		grid.get_cell(neighbors[i]).building_id = &"homestead"
+	var bdata: BuildingData = ai.building_registry.get_data(&"homestead")
+	var penalty: float = ai._calc_cluster_penalty(center, bdata)
+	assert_almost_eq(penalty, ai.ai_config.cluster_penalty, 0.001)
+
+
+func test_no_penalty_with_2_same_neighbors() -> void:
+	var center := Vector3i.ZERO
+	var neighbors: Array[Vector3i] = HexMath.neighbors(center)
+	for i: int in range(2):
+		grid.get_cell(neighbors[i]).building_id = &"homestead"
+	var bdata: BuildingData = ai.building_registry.get_data(&"homestead")
+	var penalty: float = ai._calc_cluster_penalty(center, bdata)
+	assert_almost_eq(penalty, 0.0, 0.001, "Below threshold = no penalty")
+
+
+func test_cluster_penalty_value_from_config() -> void:
+	ai.ai_config.cluster_penalty = -0.5
+	ai.ai_config.cluster_threshold = 2
+	var center := Vector3i.ZERO
+	var neighbors: Array[Vector3i] = HexMath.neighbors(center)
+	for i: int in range(2):
+		grid.get_cell(neighbors[i]).building_id = &"homestead"
+	var bdata: BuildingData = ai.building_registry.get_data(&"homestead")
+	var penalty: float = ai._calc_cluster_penalty(center, bdata)
+	assert_almost_eq(penalty, -0.5, 0.001, "Should use config penalty value")

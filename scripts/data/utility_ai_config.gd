@@ -10,6 +10,7 @@ extends Resource
 @export_range(0.0, 3.0) var adjacency_weight: float = 0.8
 @export_range(0.0, 3.0) var faction_weight: float = 0.6
 @export_range(0.0, 3.0) var penalty_weight: float = 0.7
+@export_range(0.0, 3.0) var zone_weight: float = 0.6
 
 @export_group("Metric Need Thresholds")
 ## When a metric exceeds its threshold, AI prioritizes remedial buildings.
@@ -42,6 +43,14 @@ extends Resource
 @export_group("Faction Influence")
 ## Bonus applied when placing a building preferred by the dominant faction.
 @export_range(0.0, 1.0) var dominant_faction_bonus: float = 0.2
+
+@export_group("Skyline Rules")
+@export var cluster_penalty: float = -0.15  ## Applied when 3+ adjacent same type
+@export var cluster_threshold: int = 3  ## How many same-type neighbors trigger penalty
+
+@export_group("Weapon Buildings")
+@export var weapon_diversity_penalty: float = -0.5  ## Penalty when too many same weapons
+@export var weapon_diversity_max: int = 2  ## Max same weapon type in Defense Perimeter
 
 @export_group("Performance")
 ## Max hex candidates to evaluate per cycle (limits CPU cost).

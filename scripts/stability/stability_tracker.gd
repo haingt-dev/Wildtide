@@ -5,6 +5,9 @@ extends Node
 
 var stability_config: StabilityConfig
 var economy_manager: EconomyManager  ## Optional — auto-checks resource depletion.
+var wave_manager: WaveManager  ## Optional — auto-checks wave damage.
+var quest_manager: QuestManager  ## Optional — auto-checks faction morale.
+var edict_manager: EdictManager  ## Optional — auto-checks festival bonus.
 
 var _stability: int = 100
 var _alert_level: StringName = &"normal"
@@ -19,6 +22,7 @@ func _ready() -> void:
 	_stability = stability_config.starting_stability
 	_update_alert_level()
 	EventBus.phase_changed.connect(_on_phase_changed)
+	EventBus.wave_ended.connect(_on_wave_ended)
 
 
 ## Get current stability.
@@ -122,6 +126,39 @@ func _on_phase_changed(new_phase: int, _phase_name: StringName) -> void:
 	if economy_manager:
 		check_resource_depletion(economy_manager.get_gold(), economy_manager.get_mana())
 	check_solidarity(MetricSystem.solidarity)
+	_check_faction_morale()
+	_check_festival()
+
+
+func _on_wave_ended(_cycle: int) -> void:
+	if not wave_manager or not wave_manager.hex_grid:
+		return
+	var total_cells: int = wave_manager.hex_grid.get_all_cells().size()
+	if total_cells == 0:
+		return
+	var damage_fraction: float = wave_manager.get_last_total_damage() / float(total_cells)
+	on_wave_result(damage_fraction)
+
+
+func _check_faction_morale() -> void:
+	if not quest_manager:
+		return
+	var all_low: bool = true
+	var high_count: int = 0
+	for fid: StringName in [&"the_lens", &"the_veil", &"the_coin", &"the_wall"]:
+		var morale: int = quest_manager.get_faction_morale(fid)
+		if morale >= stability_config.low_morale_threshold:
+			all_low = false
+		if morale >= stability_config.high_morale_threshold:
+			high_count += 1
+	check_faction_morale(all_low, high_count)
+
+
+func _check_festival() -> void:
+	if not edict_manager:
+		return
+	if edict_manager.get_active_edict(&"festival"):
+		apply_festival_bonus()
 
 
 func _update_alert_level() -> void:

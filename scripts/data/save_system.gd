@@ -63,6 +63,12 @@ func save_game(slot: String) -> bool:
 		if movement_manager:
 			edict_data["movement"] = SaveSerializer.serialize_movement(movement_manager)
 		_write_json(slot_path + "edicts.json", edict_data)
+	# Artifact construction state
+	var artifact_data: Dictionary = SaveSerializer.serialize_artifact(
+		GameManager.artifact_controller
+	)
+	if not artifact_data.is_empty():
+		_write_json(slot_path + "artifact.json", artifact_data)
 	return true
 
 
@@ -168,6 +174,12 @@ func _load_extra(slot_path: String) -> void:
 			SaveSerializer.deserialize_edicts(ed, edict_manager)
 		if movement_manager and ed.has("movement"):
 			SaveSerializer.deserialize_movement(ed["movement"] as Dictionary, movement_manager)
+	# Artifact construction state
+	var artifact_data: Variant = _read_json(slot_path + "artifact.json")
+	if artifact_data is Dictionary and not (artifact_data as Dictionary).is_empty():
+		GameManager.artifact_controller = SaveSerializer.deserialize_artifact(
+			artifact_data as Dictionary
+		)
 
 
 func _on_phase_changed(new_phase: int, _phase_name: StringName) -> void:

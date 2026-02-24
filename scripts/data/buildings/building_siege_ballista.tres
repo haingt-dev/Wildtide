@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="BuildingData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/building_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+building_id = &"siege_ballista"
+building_type = 6
+display_name = "Siege Ballista"
+description = "A mechanical crossbow mounted on rock, delivering devastating single-target strikes."
+gold_cost = 25
+mana_cost = 8
+construction_duration = 3
+metric_effects = { &"anxiety": -0.03, &"pollution": 0.01 }
+alignment_push = 0.2
+biome_affinity = 2
+affinity_bonus = 0.2
+preferred_zone = 4
+conflicting_zone = 2
+adjacency_targets = { &"reactor": 0.15 }

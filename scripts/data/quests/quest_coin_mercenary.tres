@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+quest_id = &"coin_mercenary"
+faction_id = &"coin"
+display_name = "Mercenary Contract"
+description = "The Coin hires mercenaries to bolster city defenses for the coming wave."
+duration = 1
+metric_effects = {}
+alignment_push = 0.0
+is_offensive = true
+offensive_effect_key = &"defense_bonus"
+offensive_effect_value = 0.25
+alignment_requirement = 0.0

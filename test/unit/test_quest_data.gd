@@ -10,7 +10,7 @@ func before_each() -> void:
 
 func test_all_quests_loaded() -> void:
 	var all := registry.get_all()
-	assert_eq(all.size(), 12, "Should load all 12 quest .tres files")
+	assert_eq(all.size(), 16, "Should load all 16 quest .tres files (12 normal + 4 offensive)")
 
 
 func test_lookup_by_quest_id() -> void:
@@ -51,3 +51,19 @@ func test_unknown_quest_returns_null() -> void:
 func test_quest_has_display_name() -> void:
 	for quest: QuestData in registry.get_all():
 		assert_ne(quest.display_name, "", "Quest %s must have display_name" % quest.quest_id)
+
+
+func test_offensive_quests_have_effect_key() -> void:
+	for quest: QuestData in registry.get_all():
+		if quest.is_offensive:
+			assert_ne(
+				quest.offensive_effect_key,
+				&"",
+				"Offensive quest %s must have effect key" % quest.quest_id,
+			)
+
+
+func test_each_faction_has_one_offensive_quest() -> void:
+	for faction_id: StringName in [&"lens", &"veil", &"coin", &"wall"]:
+		var offensives := registry.get_offensive_quests_for_faction(faction_id)
+		assert_eq(offensives.size(), 1, "Faction %s should have 1 offensive quest" % faction_id)

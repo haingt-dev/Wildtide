@@ -12,6 +12,7 @@ func before_each() -> void:
 
 func after_each() -> void:
 	gm.queue_free()
+	MetricSystem.reset_to_defaults()
 	# Disconnect any test listeners from global EventBus.
 	_disconnect_all(EventBus.cycle_started)
 	_disconnect_all(EventBus.cycle_completed)
@@ -19,6 +20,7 @@ func after_each() -> void:
 	_disconnect_all(EventBus.game_speed_changed)
 	_disconnect_all(EventBus.game_paused)
 	_disconnect_all(EventBus.game_resumed)
+	_disconnect_all(EventBus.game_won)
 
 
 func _disconnect_all(sig: Signal) -> void:
@@ -276,3 +278,81 @@ func test_era_0_before_game_starts() -> void:
 
 func test_scenario_id_default() -> void:
 	assert_eq(gm.scenario_id, &"the_wildtide")
+
+
+# --- Win conditions ---
+
+
+func _make_scenario(wc_type: int, alignment: float, era: int, cycles: int) -> ScenarioData:
+	var sd := ScenarioData.new()
+	var wc := WinConditionData.new()
+	wc.type = wc_type as WinConditionData.WinConditionType
+	wc.required_alignment = alignment
+	wc.required_era = era
+	wc.required_cycles = cycles
+	wc.required_fragments = 0
+	wc.requires_rift_core = false
+	wc.artifact_construction_cycles = 0
+	sd.win_conditions = [wc]
+	return sd
+
+
+func test_science_win_when_alignment_high_and_era3() -> void:
+	gm.cycle_number = 11  # Era 3
+	MetricSystem.push_alignment(1.0)
+	gm.scenario_data = _make_scenario(WinConditionData.WinConditionType.SCIENCE_WIN, 0.8, 3, 0)
+	var received: Array = []
+	EventBus.game_won.connect(func(wt: int) -> void: received.append(wt))
+	gm._check_win_conditions()
+	assert_eq(received.size(), 1)
+	assert_eq(received[0], WinConditionData.WinConditionType.SCIENCE_WIN)
+
+
+func test_no_win_before_required_era() -> void:
+	gm.cycle_number = 5  # Era 1
+	MetricSystem.push_alignment(1.0)
+	gm.scenario_data = _make_scenario(WinConditionData.WinConditionType.SCIENCE_WIN, 0.8, 3, 0)
+	var received: Array = []
+	EventBus.game_won.connect(func(wt: int) -> void: received.append(wt))
+	gm._check_win_conditions()
+	assert_eq(received.size(), 0, "Should not win before required era")
+
+
+func test_magic_win_when_alignment_negative() -> void:
+	gm.cycle_number = 11
+	MetricSystem.push_alignment(-1.0)
+	gm.scenario_data = _make_scenario(WinConditionData.WinConditionType.MAGIC_WIN, 0.8, 3, 0)
+	var received: Array = []
+	EventBus.game_won.connect(func(wt: int) -> void: received.append(wt))
+	gm._check_win_conditions()
+	assert_eq(received.size(), 1)
+	assert_eq(received[0], WinConditionData.WinConditionType.MAGIC_WIN)
+
+
+func test_survival_win_at_required_cycles() -> void:
+	gm.cycle_number = 16
+	gm.scenario_data = _make_scenario(WinConditionData.WinConditionType.SURVIVAL, 0.0, 1, 16)
+	var received: Array = []
+	EventBus.game_won.connect(func(wt: int) -> void: received.append(wt))
+	gm._check_win_conditions()
+	assert_eq(received.size(), 1)
+	assert_eq(received[0], WinConditionData.WinConditionType.SURVIVAL)
+
+
+func test_game_won_signal_carries_correct_type() -> void:
+	gm.cycle_number = 11
+	MetricSystem.push_alignment(-1.0)
+	gm.scenario_data = _make_scenario(WinConditionData.WinConditionType.MAGIC_WIN, 0.5, 2, 0)
+	var received: Array = []
+	EventBus.game_won.connect(func(wt: int) -> void: received.append(wt))
+	gm._check_win_conditions()
+	assert_eq(received[0], WinConditionData.WinConditionType.MAGIC_WIN)
+
+
+func test_no_win_without_scenario_data() -> void:
+	gm.cycle_number = 16
+	MetricSystem.push_alignment(1.0)
+	var received: Array = []
+	EventBus.game_won.connect(func(wt: int) -> void: received.append(wt))
+	gm._check_win_conditions()
+	assert_eq(received.size(), 0, "No scenario_data = no win check")

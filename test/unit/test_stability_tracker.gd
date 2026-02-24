@@ -208,3 +208,80 @@ func test_non_evolve_no_auto_checks() -> void:
 	_tracker._on_phase_changed(CycleTimer.Phase.WAVE, &"wave")
 	assert_eq(_tracker.get_stability(), 80, "Non-EVOLVE phases should not trigger checks")
 	MetricSystem.reset_to_defaults()
+
+
+# --- Wave → Stability integration ---
+
+
+func test_wave_ended_triggers_stability_loss() -> void:
+	var wmgr := WaveManager.new()
+	add_child(wmgr)
+	wmgr.hex_grid = HexGrid.new()
+	wmgr.hex_grid.initialize_hex_map(2)
+	wmgr._last_total_damage = float(wmgr.hex_grid.get_all_cells().size())
+	_tracker.wave_manager = wmgr
+	_tracker._on_wave_ended(1)
+	assert_true(_tracker.get_stability() < 100, "Heavy wave damage should reduce stability")
+	wmgr.queue_free()
+
+
+func test_wave_low_damage_triggers_stability_gain() -> void:
+	_tracker.push_stability(-20)
+	var wmgr := WaveManager.new()
+	add_child(wmgr)
+	wmgr.hex_grid = HexGrid.new()
+	wmgr.hex_grid.initialize_hex_map(2)
+	wmgr._last_total_damage = 0.01
+	_tracker.wave_manager = wmgr
+	_tracker._on_wave_ended(1)
+	assert_eq(_tracker.get_stability(), 85, "Low damage should gain +5 stability")
+	wmgr.queue_free()
+
+
+func test_wave_stability_no_crash_without_wave_manager() -> void:
+	_tracker._on_wave_ended(1)
+	assert_eq(_tracker.get_stability(), 100, "Should not crash without wave_manager")
+
+
+# --- Faction Morale → Stability integration ---
+
+
+func test_all_factions_low_morale_drains_stability() -> void:
+	var qmgr := QuestManager.new()
+	add_child(qmgr)
+	_tracker.quest_manager = qmgr
+	for fid: StringName in [&"the_lens", &"the_veil", &"the_coin", &"the_wall"]:
+		qmgr.push_faction_morale(fid, -40)
+	_tracker._check_faction_morale()
+	assert_eq(_tracker.get_stability(), 95, "All low morale = -5 stability")
+	qmgr.queue_free()
+
+
+func test_high_morale_factions_boost_stability() -> void:
+	_tracker.push_stability(-20)
+	var qmgr := QuestManager.new()
+	add_child(qmgr)
+	_tracker.quest_manager = qmgr
+	qmgr.push_faction_morale(&"the_lens", 30)
+	qmgr.push_faction_morale(&"the_veil", 30)
+	_tracker._check_faction_morale()
+	assert_eq(_tracker.get_stability(), 82, "2 factions at 80 morale = +2 stability")
+	qmgr.queue_free()
+
+
+# --- Festival → Stability integration ---
+
+
+func test_festival_edict_gives_stability_bonus() -> void:
+	_tracker.push_stability(-20)
+	var emgr := EdictManager.new()
+	add_child(emgr)
+	_tracker.edict_manager = emgr
+	var e := EdictData.new()
+	e.edict_id = &"festival"
+	e.duration = 3
+	emgr.edict_registry._data[&"festival"] = e
+	emgr.enact_edict(&"festival")
+	_tracker._check_festival()
+	assert_eq(_tracker.get_stability(), 83, "Festival edict = +3 stability")
+	emgr.queue_free()

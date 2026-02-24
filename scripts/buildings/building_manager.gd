@@ -9,10 +9,14 @@ var hex_grid: HexGrid
 var building_registry: BuildingRegistry
 var biome_registry: BiomeRegistry
 var economy_manager: EconomyManager  ## Optional — if set, building costs are enforced.
+var movement_manager: MovementManager  ## Optional — if set, settlement discount applied.
 
 ## All placed buildings (both under construction and completed).
 ## Key: Vector3i (coord), Value: ActiveConstruction.
 var _constructions: Dictionary = {}
+
+## Last known era — used to detect era transitions.
+var _last_era: int = 1
 
 
 func _ready() -> void:
@@ -31,7 +35,12 @@ func place_building(coord: Vector3i, building_id: StringName) -> bool:
 	var bdata: BuildingData = building_registry.get_data(building_id)
 	if not bdata:
 		return false
-	if economy_manager and not economy_manager.spend(bdata.gold_cost, bdata.mana_cost):
+	var discount: float = 0.0
+	if movement_manager:
+		discount = movement_manager.get_settlement_cost_discount()
+	var eff_gold: int = roundi(float(bdata.gold_cost) * (1.0 - discount))
+	var eff_mana: int = roundi(float(bdata.mana_cost) * (1.0 - discount))
+	if economy_manager and not economy_manager.spend(eff_gold, eff_mana):
 		return false
 	cell.building_id = building_id
 	var active := ActiveConstruction.new(coord, bdata)
@@ -112,6 +121,7 @@ func _on_phase_changed(new_phase: int, _phase_name: StringName) -> void:
 	if new_phase == CycleTimer.Phase.EVOLVE:
 		_tick_constructions()
 		_apply_completed_effects()
+		_check_era_advancement()
 
 
 func _tick_constructions() -> void:
@@ -128,6 +138,17 @@ func _apply_completed_effects() -> void:
 		if not active.is_complete:
 			continue
 		_push_building_effects(active.building_data)
+
+
+func _check_era_advancement() -> void:
+	var current_era: int = GameManager.get_current_era()
+	if current_era <= _last_era:
+		return
+	_last_era = current_era
+	for coord: Vector3i in _constructions:
+		var active: ActiveConstruction = _constructions[coord]
+		if active.is_complete and active.advance_tier():
+			EventBus.building_tier_changed.emit(coord, active.current_tier)
 
 
 func _push_building_effects(bdata: BuildingData) -> void:

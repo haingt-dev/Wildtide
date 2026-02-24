@@ -6,11 +6,13 @@ extends Node
 var economy_config: EconomyConfig
 var hex_grid: HexGrid
 var biome_registry: BiomeRegistry
+var edict_manager: EdictManager
 
 var _gold: int = 0
 var _mana: int = 0
 var _gold_capacity: int = 0
 var _mana_capacity: int = 0
+var _rift_shards: int = 0
 
 ## Number of storage-type buildings (drives capacity growth).
 var _storage_count: int = 0
@@ -78,6 +80,20 @@ func add_mana(amount: int) -> void:
 	_set_mana(mini(_mana + amount, _mana_capacity))
 
 
+## Get current Rift Shard count.
+func get_rift_shards() -> int:
+	return _rift_shards
+
+
+## Add Rift Shards (from salvage or Summon the Tide).
+func add_rift_shards(amount: int) -> void:
+	if amount <= 0:
+		return
+	var old: int = _rift_shards
+	_rift_shards += amount
+	EventBus.rift_shards_changed.emit(_rift_shards, old)
+
+
 ## Set transit state (halves income during city movement).
 func set_transit(active: bool) -> void:
 	_in_transit = active
@@ -108,7 +124,7 @@ func collect_income() -> void:
 	var raw_mana: float = 0.0
 	for coord: Vector3i in hex_grid.get_all_coords():
 		var cell: HexCell = hex_grid.get_cell(coord)
-		if not cell or cell.fog_state == FogState.HIDDEN:
+		if not cell or cell.fog_state == FogState.HIDDEN or cell.fog_state == FogState.INACTIVE:
 			continue
 		var bdata: BiomeData = biome_registry.get_data(cell.biome)
 		var gold_mult: float = bdata.gold_yield if bdata else 1.0
@@ -125,7 +141,17 @@ func collect_income() -> void:
 
 func _on_phase_changed(new_phase: int, _phase_name: StringName) -> void:
 	if new_phase == CycleTimer.Phase.EVOLVE:
+		_sync_edict_modifiers()
 		collect_income()
+
+
+## Pull income modifiers from active edicts before collecting income.
+func _sync_edict_modifiers() -> void:
+	if not edict_manager:
+		return
+	var effects: Dictionary = edict_manager.get_economy_effects()
+	_gold_income_modifier = effects.get(&"gold_income", 0.0) as float
+	_mana_income_modifier = effects.get(&"mana_income", 0.0) as float
 
 
 func _set_gold(value: int) -> void:

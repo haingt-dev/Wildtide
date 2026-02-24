@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="BuildingData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/building_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+building_id = &"entropy_spire"
+building_type = 6
+display_name = "Entropy Spire"
+description = "A dark spire radiating corruption that damages enemies over time."
+gold_cost = 8
+mana_cost = 25
+construction_duration = 3
+metric_effects = { &"anxiety": -0.02, &"harmony": -0.01 }
+alignment_push = -0.2
+biome_affinity = 1
+affinity_bonus = 0.2
+preferred_zone = 4
+conflicting_zone = 1
+adjacency_targets = { &"shrine": 0.15 }

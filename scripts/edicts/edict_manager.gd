@@ -6,10 +6,14 @@ extends Node
 const MAX_ACTIVE_EDICTS: int = 2
 
 var edict_registry: EdictRegistry
+var quest_manager: QuestManager
 
 ## Currently active edicts. Key: edict_id, Value: Dictionary {data, remaining}.
 ## remaining = -1 for permanent, positive int for timed edicts.
 var _active_edicts: Dictionary = {}
+
+## Last era when Mandate Migration was used (cooldown: once per era).
+var _mandate_last_era: int = 0
 
 
 func _ready() -> void:
@@ -33,6 +37,8 @@ func enact_edict(edict_id: StringName) -> bool:
 	}
 	_apply_faction_enact_reactions(edata)
 	EventBus.edict_enacted.emit(edict_id)
+	if edict_id == &"migration":
+		EventBus.migration_requested.emit()
 	return true
 
 
@@ -86,6 +92,35 @@ func get_economy_effects() -> Dictionary:
 	return result
 
 
+## Aggregate defense modifier from all active edicts.
+func get_defense_modifier() -> float:
+	var total: float = 0.0
+	for entry: Dictionary in _active_edicts.values():
+		var edata: EdictData = entry["data"]
+		total += edata.economy_effects.get(&"defense", 0.0) as float
+	return total
+
+
+## Aggregate discovery bonus from all active edicts.
+func get_discovery_bonus() -> float:
+	var total: float = 0.0
+	for entry: Dictionary in _active_edicts.values():
+		var edata: EdictData = entry["data"]
+		total += edata.discovery_bonus
+	return total
+
+
+## Check if Mandate Migration can be used (once per era).
+func can_mandate_migration() -> bool:
+	return GameManager.get_current_era() > _mandate_last_era
+
+
+## Consume the mandate migration cooldown for this era.
+func use_mandate_migration() -> void:
+	_mandate_last_era = GameManager.get_current_era()
+	EventBus.migration_requested.emit()
+
+
 func _on_phase_changed(new_phase: int, _phase_name: StringName) -> void:
 	if new_phase == CycleTimer.Phase.EVOLVE:
 		_apply_metric_effects()
@@ -107,7 +142,8 @@ func _apply_faction_enact_reactions(edata: EdictData) -> void:
 	for fid: StringName in edata.faction_reactions:
 		var reaction: int = edata.faction_reactions[fid]
 		if reaction > 0:
-			EventBus.faction_morale_changed.emit(fid, reaction, 0)
+			if quest_manager:
+				quest_manager.push_faction_morale(fid, reaction)
 
 
 func _apply_faction_dislike() -> void:
@@ -116,7 +152,8 @@ func _apply_faction_dislike() -> void:
 		for fid: StringName in edata.faction_reactions:
 			var reaction: int = edata.faction_reactions[fid]
 			if reaction < 0:
-				EventBus.faction_morale_changed.emit(fid, reaction, 0)
+				if quest_manager:
+					quest_manager.push_faction_morale(fid, reaction)
 
 
 func _tick_durations() -> void:

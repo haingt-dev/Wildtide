@@ -29,6 +29,10 @@ extends Resource
 @export var biome_affinity: BiomeType.Type = BiomeType.Type.PLAINS
 @export var affinity_bonus: float = 0.2  ## Speed multiplier bonus on preferred biome
 
+@export_group("Zone Affinity")
+@export var preferred_zone: int = ZoneType.Type.NONE  ## +0.3 score bonus
+@export var conflicting_zone: int = ZoneType.Type.NONE  ## -0.2 score penalty
+
 @export_group("Adjacency")
 ## Building IDs that provide adjacency bonus when neighboring this building.
 ## Key: StringName (building_id), Value: float (bonus amount).

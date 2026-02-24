@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="BuildingData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/building_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+building_id = &"rift_ward"
+building_type = 6
+display_name = "Rift Ward"
+description = "A crystal pillar projecting a protective barrier that absorbs incoming damage."
+gold_cost = 5
+mana_cost = 15
+construction_duration = 2
+metric_effects = { &"anxiety": -0.02 }
+alignment_push = -0.15
+biome_affinity = 1
+affinity_bonus = 0.2
+preferred_zone = 4
+conflicting_zone = 3
+adjacency_targets = { &"shrine": 0.15 }

@@ -31,7 +31,7 @@ func test_building_data_metric_effects() -> void:
 
 
 func test_registry_loads_all() -> void:
-	assert_eq(registry.get_all().size(), 6)
+	assert_eq(registry.get_all().size(), 10)
 
 
 func test_registry_lookup_homestead() -> void:

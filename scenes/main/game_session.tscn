@@ -1,0 +1,22 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://sxx4f7fi5r8b" path="res://scripts/core/game_session.gd" id="1"]
+[ext_resource type="Script" uid="uid://c54o7x6o6abhp" path="res://scripts/core/hex_grid_renderer.gd" id="2"]
+[ext_resource type="Script" uid="uid://cij0lfl74jrj8" path="res://scripts/core/hex_highlight.gd" id="3"]
+[ext_resource type="Script" uid="uid://n2tu46fhc5q" path="res://scripts/debug/hex_debug_camera.gd" id="4"]
+
+[node name="GameSession" type="Node3D"]
+script = ExtResource("1")
+
+[node name="HexGridRenderer" type="Node3D" parent="."]
+script = ExtResource("2")
+
+[node name="HexHighlight" type="Node3D" parent="."]
+script = ExtResource("3")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866, -0.433, 0.25, 0, 0.5, 0.866, -0.5, -0.75, 0.433, 0, 20, 0)
+shadow_enabled = true
+
+[node name="HexDebugCamera" type="Camera3D" parent="."]
+script = ExtResource("4")

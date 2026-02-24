@@ -19,6 +19,7 @@ func after_each() -> void:
 	manager.queue_free()
 	_disconnect_all(EventBus.building_placed)
 	_disconnect_all(EventBus.building_removed)
+	_disconnect_all(EventBus.building_tier_changed)
 
 
 func _disconnect_all(sig: Signal) -> void:
@@ -245,6 +246,51 @@ func test_place_without_economy_no_cost_check() -> void:
 	# Default: economy_manager is null — backward compatible
 	var success: bool = manager.place_building(Vector3i(1, -1, 0), &"homestead")
 	assert_true(success)
+
+
+# --- Tier advancement ---
+
+
+func test_era_advance_upgrades_completed_building_tier() -> void:
+	var coord := Vector3i(1, -1, 0)
+	manager.place_building(coord, &"homestead")
+	# Complete the building
+	manager._on_phase_changed(CycleTimer.Phase.EVOLVE, &"evolve")
+	var active: ActiveConstruction = manager.get_construction(coord)
+	assert_true(active.is_complete)
+	assert_eq(active.current_tier, 1)
+	# Simulate era 2 — trigger EVOLVE
+	GameManager.cycle_number = 6
+	manager._on_phase_changed(CycleTimer.Phase.EVOLVE, &"evolve")
+	assert_eq(active.current_tier, 2)
+
+
+func test_era_advance_emits_tier_changed_signal() -> void:
+	var received := []
+	EventBus.building_tier_changed.connect(
+		func(c: Vector3i, t: int) -> void: received.append([c, t])
+	)
+	var coord := Vector3i(1, -1, 0)
+	manager.place_building(coord, &"homestead")
+	manager._on_phase_changed(CycleTimer.Phase.EVOLVE, &"evolve")
+	# Trigger era 2
+	GameManager.cycle_number = 6
+	manager._on_phase_changed(CycleTimer.Phase.EVOLVE, &"evolve")
+	assert_eq(received.size(), 1)
+	assert_eq(received[0][1], 2)
+
+
+func test_under_construction_not_upgraded_on_era_change() -> void:
+	var coord := Vector3i(1, -1, 0)
+	# Reactor takes 3 cycles on Plains — won't be done in 1 tick
+	manager.place_building(coord, &"reactor")
+	manager._on_phase_changed(CycleTimer.Phase.EVOLVE, &"evolve")
+	var active: ActiveConstruction = manager.get_construction(coord)
+	assert_false(active.is_complete)
+	# Simulate era 2
+	GameManager.cycle_number = 6
+	manager._on_phase_changed(CycleTimer.Phase.EVOLVE, &"evolve")
+	assert_eq(active.current_tier, 1, "Incomplete building should not upgrade")
 
 
 func test_place_fails_when_cannot_afford() -> void:

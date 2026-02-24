@@ -13,12 +13,15 @@ func before_each() -> void:
 
 func after_each() -> void:
 	manager.queue_free()
+	MetricSystem.reset_to_defaults()
 	_disconnect_all(EventBus.quest_proposed)
 	_disconnect_all(EventBus.quest_approved)
 	_disconnect_all(EventBus.quest_rejected)
 	_disconnect_all(EventBus.quest_completed)
 	_disconnect_all(EventBus.metric_changed)
 	_disconnect_all(EventBus.alignment_changed)
+	_disconnect_all(EventBus.wave_ended)
+	_disconnect_all(EventBus.faction_morale_changed)
 
 
 func _disconnect_all(sig: Signal) -> void:
@@ -237,3 +240,80 @@ func test_morale_change_emits_signal() -> void:
 	assert_eq(received[0][0], &"lens")
 	assert_eq(received[0][1], 60)
 	assert_eq(received[0][2], 50)
+
+
+# --- Morale-scaled quest duration ---
+
+
+func _approve_first_normal_quest() -> ActiveQuest:
+	manager._on_phase_changed(CycleTimer.Phase.INFLUENCE, &"influence")
+	var proposals := manager.get_pending_proposals()
+	var target: QuestData = proposals[0]
+	manager.approve_quest(target.quest_id)
+	var actives := manager.get_active_quests()
+	return actives[0]
+
+
+func test_morale_below_25_adds_one_cycle() -> void:
+	manager._faction_morale[&"lens"] = 20
+	manager._faction_morale[&"veil"] = 20
+	manager._faction_morale[&"coin"] = 20
+	manager._faction_morale[&"wall"] = 20
+	manager._on_phase_changed(CycleTimer.Phase.INFLUENCE, &"influence")
+	var proposals := manager.get_pending_proposals()
+	var target: QuestData = proposals[0]
+	var original_duration: int = target.duration
+	manager.approve_quest(target.quest_id)
+	var active: ActiveQuest = manager.get_active_quests()[0]
+	assert_eq(active.remaining_cycles, original_duration + 1)
+
+
+func test_morale_above_75_removes_one_cycle() -> void:
+	manager._faction_morale[&"lens"] = 80
+	manager._faction_morale[&"veil"] = 80
+	manager._faction_morale[&"coin"] = 80
+	manager._faction_morale[&"wall"] = 80
+	manager._on_phase_changed(CycleTimer.Phase.INFLUENCE, &"influence")
+	var proposals := manager.get_pending_proposals()
+	# Find a quest with duration >= 2 for a valid test.
+	var target: QuestData = null
+	for p: QuestData in proposals:
+		if p.duration >= 2:
+			target = p
+			break
+	if not target:
+		pass_test("No quest with duration >= 2 available")
+		return
+	manager.approve_quest(target.quest_id)
+	var active: ActiveQuest = manager.get_active_quests()[0]
+	assert_eq(active.remaining_cycles, target.duration - 1)
+
+
+func test_morale_above_75_min_one_cycle() -> void:
+	manager._faction_morale[&"lens"] = 80
+	manager._faction_morale[&"veil"] = 80
+	manager._faction_morale[&"coin"] = 80
+	manager._faction_morale[&"wall"] = 80
+	manager._on_phase_changed(CycleTimer.Phase.INFLUENCE, &"influence")
+	var proposals := manager.get_pending_proposals()
+	# Find a quest with duration == 1.
+	var target: QuestData = null
+	for p: QuestData in proposals:
+		if p.duration == 1:
+			target = p
+			break
+	if not target:
+		pass_test("No quest with duration 1 available")
+		return
+	manager.approve_quest(target.quest_id)
+	var active: ActiveQuest = manager.get_active_quests()[0]
+	assert_eq(active.remaining_cycles, 1, "Should not go below 1")
+
+
+func test_morale_normal_no_duration_change() -> void:
+	manager._on_phase_changed(CycleTimer.Phase.INFLUENCE, &"influence")
+	var proposals := manager.get_pending_proposals()
+	var target: QuestData = proposals[0]
+	manager.approve_quest(target.quest_id)
+	var active: ActiveQuest = manager.get_active_quests()[0]
+	assert_eq(active.remaining_cycles, target.duration, "Normal morale = no scaling")
