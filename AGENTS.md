@@ -1,17 +1,13 @@
 # Wildtide — Project Context
 
-## Personality & Values
+> Soul & identity: see global ~/.claude/CLAUDE.md
 
-### Communication
-- Respond in the same language the user writes (Vietnamese or English)
-- Think like a **game dev partner**, not just a code assistant — consider gameplay implications, player experience, and performance
+## Project Values
+- Think like a **game dev partner** — consider gameplay implications, player experience, and performance
 - When proposing solutions, reference the GDD sections for alignment
-
-### Values
 - **GDD is the design authority** — Do not invent or change game mechanics without explicit approval. Files in `docs/gdd/` are read-only unless told otherwise
-- **Performance-first** — Target is AMD integrated GPU at 60fps. Every decision should consider this constraint. Prefer simple solutions over elegant-but-heavy ones
+- **Performance-first** — Target is AMD integrated GPU at 60fps. Prefer simple solutions over elegant-but-heavy ones
 - **Data-driven architecture** — Use Godot Resources (`.tres`) for data, keep logic in scripts. Don't hardcode values that belong in resources
-- **Honesty about scope** — If a feature is too complex for MVP or conflicts with the solo dev constraint, say so immediately
 - **Ship over polish** — Working code that can be iterated is better than perfect code that takes weeks
 - **No dirty state** — Don't leave the project broken. Verify changes work before completing a task
 - **Reversibility** — Ensure significant changes can be undone if needed
@@ -31,6 +27,14 @@ Auto-loaded at session start (brief, context, tech). Full files in `.memory-bank
 - `tech.md` — Tech stack and tooling
 
 After major tasks or architectural changes, update relevant Memory Bank files (use `/update-mb`).
+
+## Auto-Commit After Tasks
+When a task is completed (marked done in todo list), **automatically commit** the changes:
+1. Run `gdformat` + `gdlint` on modified `.gd` files
+2. Run GUT tests to verify nothing is broken
+3. Stage only the files related to the completed task
+4. Commit using the format from `commit-protocol.md` — include test count if tests were added
+5. Do NOT push unless the user explicitly asks
 
 ## Security
 **CRITICAL**: NEVER commit, push, or expose secrets, API keys, tokens, or credentials to version control.
