@@ -1,6 +1,6 @@
 # Wildtide — Project Context
 
-> Soul & identity: see global ~/.claude/CLAUDE.md
+> Soul & identity: see ~/.claude/CLAUDE.md or ~/.gemini/GEMINI.md
 
 ## Project Values
 - Think like a **game dev partner** — consider gameplay implications, player experience, and performance
@@ -26,7 +26,7 @@ Auto-loaded at session start (brief, context, tech). Full files in `.memory-bank
 - `architecture.md` — System architecture
 - `tech.md` — Tech stack and tooling
 
-After major tasks or architectural changes, update relevant Memory Bank files (use `/update-mb`).
+After major tasks or architectural changes, update relevant Memory Bank files.
 
 ## Auto-Commit After Tasks
 When a task is completed (marked done in todo list), **automatically commit** the changes:
